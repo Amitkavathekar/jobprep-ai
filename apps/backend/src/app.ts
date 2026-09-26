@@ -11,6 +11,17 @@ app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
+// Root Route
+app.get("/", (_req: Request, res: Response) => {
+  res.json({
+    status: "ok",
+    message: "Welcome to JobPrep AI Backend API",
+    healthCheck: "/health",
+    apiHealthCheck: "/api/v1/health",
+    timestamp: new Date().toISOString(),
+  })
+})
+
 // Health Check Routes
 app.get("/health", (_req: Request, res: Response) => {
   res.json({
@@ -29,4 +40,13 @@ app.get("/api/v1/health", (_req: Request, res: Response) => {
   })
 })
 
+// 404 Fallback Handler
+app.use((_req: Request, res: Response) => {
+  res.status(404).json({
+    status: "error",
+    message: "Route not found",
+  })
+})
+
 export default app
+
