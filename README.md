@@ -1,62 +1,191 @@
-# shadcn/ui monorepo template
+# 🤖 JobPrep AI — AI-Powered Job & Interview Preparation Platform
 
-This is a Next.js monorepo template with shadcn/ui.
+A modern and responsive **AI-Driven Job Preparation Platform** built using **React 19, TypeScript, Vite, and Tailwind CSS v4**.
 
-## Adding components
+The platform empowers job seekers with AI-assisted resume building, ATS resume scoring, realistic AI mock interviews with real-time feedback, skill gap analysis, and personalized career reports.
 
-To add components to your app, run the following command at the root of your `web` app:
+The project demonstrates **modern frontend architecture**, modular React component design, interactive AI integration flows, and **enterprise-level dashboard management**.
+
+🔗 **Live Website**
+https://jobprep-ai.vercel.app/
+
+---
+
+## 🧰 Tech Badges
+
+![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react)
+![Vite](https://img.shields.io/badge/Vite-8-646cff?style=flat-square&logo=vite)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=flat-square&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-4-38bdf8?style=flat-square&logo=tailwindcss)
+![PWA](https://img.shields.io/badge/PWA-Ready-purple?style=flat-square)
+
+---
+
+## 🚀 Features
+
+- ⚡ **Vite 8 & React 19** for lightning-fast modern application architecture
+- 🎯 **ATS Resume Analyzer & Editor**: Instant score analysis, keyword suggestions, and live editing preview
+- 🎙️ **AI Voice & Video Mock Interview Simulator**: Interactive mock interview sessions with real-time evaluation
+- 📊 **Smart Dashboard & Skill Reports**: Dynamic dashboards tracking user progress, strengths, and interview metrics
+- 💡 **AI Job & Resume Matching**: Personalized recommendations based on targeted role requirements
+- 💳 **Membership & Razorpay Integration**: Subscription pricing plans integrated with Razorpay gateway
+- 🎫 **Support Ticketing System**: Full user support desk with status tracking
+- 👑 **Admin Control Panel**: Comprehensive administrative dashboard for managing users, coupons, and support requests
+- 🎨 **Tailwind CSS v4**: Utility-first styling with high-end glassmorphism and modern dark design aesthetics
+
+---
+
+## 🛠 Tech Stack
+
+| Category | Technologies |
+|--------|-------------|
+| Framework | React 19 + TypeScript 5 |
+| Build Tool | Vite 8 |
+| Styling | Tailwind CSS v4 |
+| Payment Gateway | Razorpay SDK Integration |
+| Components & UI | Reusable Component Architecture & Icons |
+| Services | Support Ticket Engine & Coupon Management |
+
+---
+
+## 🚀 Getting Started
+
+Clone the repository
 
 ```bash
-pnpm dlx shadcn@latest add button -c apps/web
+git clone https://github.com/Amitkavathekar/JobPrepAI.git
 ```
 
-This will place the ui components in the `packages/ui/src/components` directory.
+Navigate into the project
 
-## Using components
-
-To use the components in your app, import them from the `ui` package.
-
-```tsx
-import { Button } from "@workspace/ui/components/button";
+```bash
+cd JobPrepAI
 ```
 
-## Naming conventions
+Install dependencies
 
-Use these conventions for new code across `apps/` and `packages/`. Keep existing names unless a change is explicitly requested.
+```bash
+npm install
+```
 
-### Code identifiers
+Run development server
 
-- **React components and classes:** PascalCase, for example `ResumeEditor` and `AuthService`.
-- **Functions, methods, variables, and parameters:** camelCase, for example `getUser`, `createResume`, `userData`, and `resumeId`.
-- **Types, interfaces, and enums:** PascalCase, for example `User`, `Resume`, and `ApiResponse<T>`. Use a `Props` suffix for component props, such as `ResumeCardProps`.
-- **Constants:** UPPER_SNAKE_CASE for values that are genuine shared constants or configuration, such as `API_URL` and `MAX_FILE_SIZE`. Use camelCase for ordinary local variables, even when declared with `const`.
-- **Boolean identifiers:** Prefer clear prefixes such as `is`, `has`, `can`, or `should`, for example `isLoading` and `hasAccess`.
-- **Event handlers and callbacks:** Use `handle` for component handlers and `on` for callback props, for example `handleSubmit` and `onSubmit`.
-- Prefer descriptive names; avoid unclear abbreviations. Keep acronyms in types and identifiers readable, for example `ApiResponse` and `userId`.
+```bash
+npm run dev
+```
 
-### Files and folders
+Open browser
 
-- **React component files:** PascalCase with a `.tsx` extension, for example `ResumeCard.tsx`.
-- **Hooks:** Start the exported function with `use` and use camelCase, for example `useAuth`. Name the file `use-auth.ts`.
-- **Other TypeScript modules:** Use kebab-case filenames, for example `api-client.ts`, `auth-schema.ts`, and `resume-service.ts`.
-- **Folders:** Use lowercase kebab-case, for example `resume-editor/` and `interview-prep/`. Keep package and workspace names lowercase kebab-case as well.
-- **Tests:** Keep the related name and add `.test` or `.spec` before the extension, for example `resume-service.test.ts` or `ResumeCard.test.tsx`.
-- **Styles:** Name CSS modules after their component, for example `ResumeCard.module.css`.
+```
+http://localhost:5173
+```
 
-### Next.js routes
+---
 
-- Keep Next.js special filenames exactly as required: `page.tsx`, `layout.tsx`, `route.ts`, `loading.tsx`, `error.tsx`, and other framework-defined names.
-- Use lowercase kebab-case for static URL segments, for example `forgot-password/`.
-- Use Next.js dynamic segment syntax unchanged, for example `[resumeId]/`; use `[...slug]/` or `[[...slug]]/` for catch-all segments when needed.
-- Keep route groups in parentheses, for example `(auth)/` and `(dashboard)/`.
-- Name route parameters in camelCase, for example `[resumeId]`.
+## 📂 Project Structure
 
-### Backend and shared code
+```
+JobPrepAI
+│
+├── public/
+│
+├── src/
+│   ├── components/
+│   │   ├── admin/
+│   │   ├── AdminSidebar.tsx
+│   │   ├── CompleteProfileModal.tsx
+│   │   ├── LockedBlurOverlay.tsx
+│   │   ├── RazorpayCheckoutModal.tsx
+│   │   ├── ResumePreviewEditModal.tsx
+│   │   ├── Sidebar.tsx
+│   │   ├── StepProgressBar.tsx
+│   │   ├── UserMembershipModal.tsx
+│   │   └── UserSupportModal.tsx
+│   │
+│   ├── pages/
+│   │   ├── AIAnalysis.tsx
+│   │   ├── ATSAnalysis.tsx
+│   │   ├── AdminPanel.tsx
+│   │   ├── Dashboard.tsx
+│   │   ├── InterviewPrep.tsx
+│   │   ├── JobResume.tsx
+│   │   ├── LandingPage.tsx
+│   │   ├── Login.tsx
+│   │   ├── MockInterview.tsx
+│   │   ├── Profile.tsx
+│   │   ├── Reports.tsx
+│   │   └── ResumeEditor.tsx
+│   │
+│   ├── services/
+│   │   ├── couponService.ts
+│   │   └── supportTickets.ts
+│   │
+│   ├── types.ts
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── index.css
+│
+├── vite.config.ts
+├── package.json
+└── README.md
+```
 
-- Use lowercase kebab-case for module and feature folders, for example `ai-analysis/` and `mock-interview/`.
-- Name backend files with a kebab-case domain and a clear role suffix, such as `auth.controller.ts`, `auth.service.ts`, `auth.routes.ts`, and `auth.schema.ts`.
-- Use PascalCase for classes and exported types; use camelCase for functions and values, including service methods and route handlers.
-- Name validation schemas with a domain plus `Schema`, such as `create-resume.schema.ts` for the file and `createResumeSchema` for the exported schema value.
-- Use PascalCase singular nouns for data model types, such as `User` and `Resume`; use camelCase for document and API fields, such as `userId` and `createdAt`.
-- Use UPPER_SNAKE_CASE for environment variable names, for example `MONGODB_URI` and `JWT_SECRET`.
-- Keep API response and request types explicit and PascalCase, for example `ApiResponse<T>`, `CreateResumeRequest`, and `ResumeResponse`.
+---
+
+## 🎨 Styling
+
+This project uses **Tailwind CSS v4**.
+
+- Utility classes imported via `@tailwindcss/vite`
+- Custom global styles defined in `src/index.css`
+- Dark mode theme and responsive layout design
+
+---
+
+## 🔧 Useful Scripts
+
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run preview  # Preview production build locally
+npm run format   # Format code using oxfmt
+```
+
+---
+
+## 🚀 Deployment
+
+### Deploy with Vercel
+
+```bash
+npm install -g vercel
+vercel --prod
+```
+
+### Manual Deployment
+
+```bash
+npm run build
+```
+
+Upload the **dist/** folder to your hosting server.
+
+---
+
+## 👨‍💻 Connect with Me
+
+🔗 **Portfolio**
+https://amit-rtst.vercel.app/
+
+🔗 **LinkedIn**
+https://www.linkedin.com/in/amitkavathekar/
+
+🔗 **GitHub**
+https://github.com/Amitkavathekar
+
+🔗 **Instagram**
+https://instagram.com/amittt_0x9/
+
+---
+
+⭐ If you like this project, consider giving it a **star on GitHub**.

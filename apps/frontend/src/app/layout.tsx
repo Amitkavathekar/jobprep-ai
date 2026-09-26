@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Geist_Mono, Inter } from "next/font/google"
 
 import { ThemeProvider } from "@/components/ThemeProvider"
@@ -11,7 +12,18 @@ const fontMono = Geist_Mono({
   variable: "--font-mono",
 })
 
+export const metadata: Metadata = {
+  title: "JobPrep AI - Elevate Your Career With Smart Prep",
+  description: "AI-powered job interview preparation, ATS resume builder, and mock interviews.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
+}
+
 export default function RootLayout({
+
   children,
 }: Readonly<{
   children: React.ReactNode
@@ -33,3 +45,4 @@ export default function RootLayout({
     </html>
   )
 }
+
