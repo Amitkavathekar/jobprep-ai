@@ -1,52 +1,37 @@
-import express, { Express, Request, Response } from "express"
-import cors from "cors"
-import dotenv from "dotenv"
+import express, { Express, Request, Response } from 'express';
+import cors from 'cors';
+import { corsConfig } from './config/cors.config.js';
+import { globalRateLimiter } from './middlewares/rate-limit.middleware.js';
+import { errorMiddleware } from './middlewares/error.middleware.js';
+import { NotFoundError } from './errors/NotFoundError.js';
+import routes from './routes/index.js';
 
-dotenv.config()
+const app: Express = express();
 
-const app: Express = express()
+// Global Middlewares
+app.use(cors(corsConfig));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(globalRateLimiter);
 
-// Middleware
-app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-
-// Root Route
-app.get("/", (_req: Request, res: Response) => {
-  res.json({
-    status: "ok",
-    message: "Welcome to JobPrep AI Backend API",
-    healthCheck: "/health",
-    apiHealthCheck: "/api/v1/health",
+// Health check endpoint
+app.get('/health', (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'UP',
     timestamp: new Date().toISOString(),
-  })
-})
+    uptime: process.uptime(),
+  });
+});
 
-// Health Check Routes
-app.get("/health", (_req: Request, res: Response) => {
-  res.json({
-    status: "ok",
-    message: "JobPrep AI Backend API is running",
-    timestamp: new Date().toISOString(),
-  })
-})
+// API Routes mounting
+app.use('/api/v1', routes);
 
-app.get("/api/v1/health", (_req: Request, res: Response) => {
-  res.json({
-    status: "ok",
-    service: "JobPrep AI API",
-    version: "1.0.0",
-    timestamp: new Date().toISOString(),
-  })
-})
+// 404 Route Handler
+app.use((_req: Request, _res: Response, next) => {
+  next(new NotFoundError('The requested endpoint does not exist.'));
+});
 
-// 404 Fallback Handler
-app.use((_req: Request, res: Response) => {
-  res.status(404).json({
-    status: "error",
-    message: "Route not found",
-  })
-})
+// Global Centralized Error Handling Middleware
+app.use(errorMiddleware);
 
-export default app
-
+export default app;
