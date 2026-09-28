@@ -1,4 +1,4 @@
-import { getGeminiClient } from '../config/gemini.config.js';
+import { getGeminiClient } from '../config/groq.config.js';
 import { logger } from '../config/logger.js';
 import { ApiError } from '../errors/ApiError.js';
 import { HTTP_STATUS } from '../constants/http-status.js';

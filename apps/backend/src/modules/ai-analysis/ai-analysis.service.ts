@@ -1,7 +1,8 @@
 import { GeminiService } from '../../services/gemini.service.js';
+import { AIAnalysisModel } from './ai-analysis.model.js';
 
 export class AIAnalysisService {
-  public static async getCareerAdvice(targetRole: string, currentSkills: string[]) {
+  public static async getCareerAdvice(targetRole: string, currentSkills: string[], userId?: string) {
     const prompt = `
 Give detailed career progression and skill gap advice for someone aspiring to be a ${targetRole}.
 Their current skills: ${currentSkills.join(', ')}.
@@ -14,10 +15,12 @@ Provide JSON output:
 }
 `;
 
+    let result: { recommendedSkills: string[]; learningRoadmap: string[]; careerOutlook: string };
+
     try {
-      return await GeminiService.generateJSON(prompt);
+      result = await GeminiService.generateJSON(prompt);
     } catch {
-      return {
+      result = {
         recommendedSkills: ['System Design', 'Cloud Platforms (AWS/GCP)', 'Kubernetes'],
         learningRoadmap: [
           'Master Advanced TypeScript & Backend Architecture',
@@ -27,5 +30,19 @@ Provide JSON output:
         careerOutlook: 'High demand with excellent compensation growth.',
       };
     }
+
+    if (userId) {
+      await AIAnalysisModel.create({
+        userId,
+        targetRole,
+        currentSkills,
+        recommendedSkills: result.recommendedSkills,
+        learningRoadmap: result.learningRoadmap,
+        careerOutlook: result.careerOutlook,
+      });
+    }
+
+    return result;
   }
 }
+

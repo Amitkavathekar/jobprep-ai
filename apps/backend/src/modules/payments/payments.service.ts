@@ -1,4 +1,5 @@
 import { UserModel } from '../users/user.model.js';
+import { PaymentModel } from './payment.model.js';
 
 export class PaymentsService {
   public static async createOrder(userId: string, plan: 'PRO' | 'ENTERPRISE') {
@@ -10,6 +11,15 @@ export class PaymentsService {
     const orderId = `order_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const amount = amountMap[plan] || 999;
 
+    await PaymentModel.create({
+      userId,
+      orderId,
+      amount,
+      currency: 'INR',
+      plan,
+      status: 'PENDING',
+    });
+
     return {
       orderId,
       amount,
@@ -19,7 +29,13 @@ export class PaymentsService {
   }
 
   public static async verifyPayment(userId: string, orderId: string, paymentId: string, plan: 'PRO' | 'ENTERPRISE') {
+    await PaymentModel.findOneAndUpdate(
+      { orderId },
+      { paymentId, status: 'SUCCESS' },
+      { new: true }
+    );
     await UserModel.findByIdAndUpdate(userId, { subscriptionPlan: plan });
     return { status: 'SUCCESS', message: `Subscription upgraded to ${plan}`, orderId, paymentId };
   }
 }
+
