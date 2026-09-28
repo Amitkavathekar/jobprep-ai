@@ -1,7 +1,7 @@
 import { RESPONSE_MESSAGES } from "../../constants/response-messages.js"
 import { BadRequestError } from "../../errors/BadRequestError.js"
 import { UnauthorizedError } from "../../errors/UnauthorizedError.js"
-import { generateToken } from "../../jwt.utils.js"
+import { generateToken } from "../../shared/utils/jwt.utils.js"
 import { UserModel } from "../users/user.model.js"
 
 export class AuthService {

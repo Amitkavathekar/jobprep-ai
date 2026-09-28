@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express"
 import { RESPONSE_MESSAGES } from "../constants/response-messages.js"
 import { UnauthorizedError } from "../errors/UnauthorizedError.js"
-import { verifyToken } from "../jwt.utils.js"
+import { verifyToken } from "../shared/utils/jwt.utils.js"
 
 export const authMiddleware = (
   req: Request,

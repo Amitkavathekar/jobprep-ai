@@ -1,11 +1,15 @@
-import { GeminiService } from '../../services/gemini.service.js';
-import { AIAnalysisModel } from './ai-analysis.model.js';
+import { GeminiService } from "../../services/gemini.service.js"
+import { AIAnalysisModel } from "./ai-analysis.model.js"
 
 export class AIAnalysisService {
-  public static async getCareerAdvice(targetRole: string, currentSkills: string[], userId?: string) {
+  public static async getCareerAdvice(
+    targetRole: string,
+    currentSkills: string[],
+    userId?: string
+  ) {
     const prompt = `
 Give detailed career progression and skill gap advice for someone aspiring to be a ${targetRole}.
-Their current skills: ${currentSkills.join(', ')}.
+Their current skills: ${currentSkills.join(", ")}.
 
 Provide JSON output:
 {
@@ -13,22 +17,30 @@ Provide JSON output:
   "learningRoadmap": ["Step 1...", "Step 2..."],
   "careerOutlook": "string summary"
 }
-`;
+`
 
-    let result: { recommendedSkills: string[]; learningRoadmap: string[]; careerOutlook: string };
+    let result: {
+      recommendedSkills: string[]
+      learningRoadmap: string[]
+      careerOutlook: string
+    }
 
     try {
-      result = await GeminiService.generateJSON(prompt);
+      result = await GeminiService.generateJSON(prompt)
     } catch {
       result = {
-        recommendedSkills: ['System Design', 'Cloud Platforms (AWS/GCP)', 'Kubernetes'],
-        learningRoadmap: [
-          'Master Advanced TypeScript & Backend Architecture',
-          'Learn Containerization with Docker & Kubernetes',
-          'Practice System Design Interview Questions',
+        recommendedSkills: [
+          "System Design",
+          "Cloud Platforms (AWS/GCP)",
+          "Kubernetes",
         ],
-        careerOutlook: 'High demand with excellent compensation growth.',
-      };
+        learningRoadmap: [
+          "Master Advanced TypeScript & Backend Architecture",
+          "Learn Containerization with Docker & Kubernetes",
+          "Practice System Design Interview Questions",
+        ],
+        careerOutlook: "High demand with excellent compensation growth.",
+      }
     }
 
     if (userId) {
@@ -39,10 +51,9 @@ Provide JSON output:
         recommendedSkills: result.recommendedSkills,
         learningRoadmap: result.learningRoadmap,
         careerOutlook: result.careerOutlook,
-      });
+      })
     }
 
-    return result;
+    return result
   }
 }
-
