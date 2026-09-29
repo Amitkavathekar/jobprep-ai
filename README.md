@@ -7,7 +7,7 @@ JobPrep AI helps job seekers prepare for their careers with AI-assisted **resume
 The platform also includes **membership management, Razorpay payment integration, support ticketing, coupon management, and an admin control panel**, demonstrating modern frontend architecture and real-world application development.
 
 🔗 **Live Website**
-https://jobprep-ai-frontend.vercel.app/
+https://jobprep-ai-zeta.vercel.app/
 
 🔗 **Figma Design**
 https://jobpreapai-figmaupdated.vercel.app/
