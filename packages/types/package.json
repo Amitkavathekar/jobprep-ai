@@ -1,6 +1,6 @@
 {
   "name": "@workspace/types",
-  "version": "0.0.1",
-  "private": true,
-  "type": "module"
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts"
 }

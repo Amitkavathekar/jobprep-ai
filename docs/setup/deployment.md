@@ -3,7 +3,7 @@
 
 deployement links :
 
-🔗 Live Website https://jobprep-ai-frontend.vercel.app/
+🔗 Live Website http://jobprep-ai-frontend-git-development-amit-kavathekars-projects.vercel.app/
 
 🔗 Backend  https://jobprep-ai-xoi4.onrender.com/
 
