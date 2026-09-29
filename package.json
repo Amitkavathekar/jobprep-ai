@@ -1,6 +1,5 @@
 {
- "name": "@workspace/types",
-  "version": "1.0.0",
+ "name": "jobprep-ai",
   "private": true,
   "workspaces": [
     "apps/*",

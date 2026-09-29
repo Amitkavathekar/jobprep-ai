@@ -3,9 +3,5 @@
   "version": "1.0.0",
   "private": true,
   "main": "./src/User.ts",
-  "types": "./src/User.ts",
-  "exports": {
-    ".": "./src/User.ts",
-    "./User": "./src/User.ts"
-  }
+  "types": "./src/User.ts"
 }

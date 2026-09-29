@@ -1,8 +1,7 @@
 {
-   "name": "@jobprep/backend",
+  "name": "@jobprep/backend",
   "version": "1.0.0",
   "private": true,
-
   "scripts": {
     "start": "tsx src/server.ts",
     "dev": "tsx watch src/server.ts",
@@ -10,8 +9,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@workspace/types": "*",
     "@google/generative-ai": "^0.24.0",
-    "@workspace/types": "1.0.0",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.6.1",
     "cors": "^2.8.5",
