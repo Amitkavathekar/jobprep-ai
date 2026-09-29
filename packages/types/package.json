@@ -2,7 +2,10 @@
   "name": "@workspace/types",
   "version": "1.0.0",
   "private": true,
+  "main": "./src/User.ts",
+  "types": "./src/User.ts",
   "exports": {
-    "./user": "./user.entity.ts"
+    ".": "./src/User.ts",
+    "./User": "./src/User.ts"
   }
 }
