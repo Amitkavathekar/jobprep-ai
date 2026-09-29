@@ -1,4 +1,4 @@
-import { User } from "@workspace/types/User";
+import { User } from "@workspace/types";
 export interface userEntity extends User {
   passwordHash: string
 }
