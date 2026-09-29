@@ -1,6 +1,6 @@
 {
-  "name": "next-monorepo",
-  "version": "0.0.1",
+ "name": "@workspace/types",
+  "version": "1.0.0",
   "private": true,
   "workspaces": [
     "apps/*",
