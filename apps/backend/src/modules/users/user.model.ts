@@ -1,7 +1,6 @@
 import { Schema, model, Types } from "mongoose";
 
-const UserSchema = new Schema(
-  {
+const UserSchema = new Schema({
     userId: {
       type: String,
       required: true,
