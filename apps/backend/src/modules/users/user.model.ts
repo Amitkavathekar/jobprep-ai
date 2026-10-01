@@ -1,7 +1,19 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, Types } from "mongoose";
 
 const UserSchema = new Schema(
   {
+    userId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
+    educationDegreeId: {
+      type: Types.ObjectId,
+      ref: "EducationDegree",
+      required: true,
+    },
+
     fullName: {
       type: String,
       required: true,
@@ -16,46 +28,49 @@ const UserSchema = new Schema(
       trim: true,
     },
 
+    portfolioUrl: {
+      type: String,
+      trim: true,
+    },
+
     passwordHash: {
       type: String,
       required: true,
     },
 
-    role: {
+    professionalTitle: {
       type: String,
-      enum: ["user", "admin"],
-      default: "user",
-    },
-
-    avatarUrl: {
-      type: String,
-    },
-
-    phone: {
-      type: String,
-    },
-
-    location: {
-      type: String,
+      trim: true,
     },
 
     bio: {
       type: String,
+      trim: true,
     },
 
-    professionalTitle: {
+    avatarUrl: {
       type: String,
+      trim: true,
     },
 
-    isEmailVerified: {
-      type: Boolean,
-      default: false,
-    },
-
-    status: {
+    phoneNo: {
       type: String,
-      enum: ["active", "inactive"],
-      default: "active",
+      trim: true,
+    },
+
+    github: {
+      type: String,
+      trim: true,
+    },
+
+    linkedin: {
+      type: String,
+      trim: true,
+    },
+
+    location: {
+      type: String,
+      trim: true,
     },
   },
   {
