@@ -11,6 +11,7 @@ export interface User {
   location: string;
 }
 
+
 export interface EducationDegree {
   degreeName: string;
   fieldOfStudy: string;
