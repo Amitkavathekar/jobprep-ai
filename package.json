@@ -1,31 +1,32 @@
 {
  "name": "jobprep-ai",
-  "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "scripts": {
-    "build": "turbo build",
-    "dev": "turbo dev",
-    "lint": "turbo lint",
-    "format": "turbo format",
-    "typecheck": "turbo typecheck"
-  },
-  "devDependencies": {
-    "@workspace/eslint-config": "*",
-    "@workspace/typescript-config": "*",
-    "prettier": "^3.8.3",
-    "prettier-plugin-tailwindcss": "^0.8.0",
-    "turbo": "^2.9.18",
-    "typescript": "^5"
-  },
-  "packageManager": "npm@10.9.8",
-  "engines": {
-    "node": ">=20"
-  },
-  "dependencies": {
-    "nodemailer": "^10.0.12",
-    "nodemon": "^3.1.14"
-  }
+ "private": true,
+ "workspaces": [
+  "apps/*",
+  "packages/*"
+ ],
+ "scripts": {
+  "build": "turbo build",
+  "dev": "turbo dev",
+  "lint": "turbo lint",
+  "format": "turbo format",
+  "typecheck": "turbo typecheck"
+ },
+ "devDependencies": {
+  "@workspace/eslint-config": "*",
+  "@workspace/typescript-config": "*",
+  "nodemon": "^3.1.14",
+  "prettier": "^3.8.3",
+  "prettier-plugin-tailwindcss": "^0.8.0",
+  "ts-node": "^10.9.2",
+  "turbo": "^2.9.18",
+  "typescript": "^5"
+ },
+ "packageManager": "npm@10.9.8",
+ "engines": {
+  "node": ">=20"
+ },
+ "dependencies": {
+  "nodemailer": "^10.0.12"
+ }
 }
