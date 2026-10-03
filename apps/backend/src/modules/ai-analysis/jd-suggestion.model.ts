@@ -1,14 +1,14 @@
-import { Schema, model } from "mongoose"
+import { Schema, Types, model } from "mongoose"
 
 const JdSuggestionSchema = new Schema(
   {
     Ai_analytic_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "AiAnalysis",
       required: true,
     },
     priority: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "Priority",
       required: true,
     },

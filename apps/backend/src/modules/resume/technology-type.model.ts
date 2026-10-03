@@ -1,9 +1,9 @@
-import { Schema, model } from "mongoose"
+import { Schema, Types, model } from "mongoose"
 
 const TechnologyTypeSchema = new Schema(
   {
     technology_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "Technology",
       required: true,
     },

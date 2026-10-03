@@ -1,14 +1,14 @@
-import { Schema,model } from "mongoose"
+import { Schema,Types,model } from "mongoose"
 
 const EducationDegreeSchema = new Schema(
   {
     FieldOfStudyId: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "FieldOfStudyModel",
       required: true,
     },
     DegreeNameId: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "DegreeName",
       required: true,
     },

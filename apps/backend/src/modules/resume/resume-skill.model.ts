@@ -1,14 +1,15 @@
-import { model, Schema } from "mongoose";
+import { model, Schema, Types } from "mongoose";
 
 const ResumeSkillSchema = new Schema(
   {
     user_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "user",
       required: true,
     },
     skill_name: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
+      ref: "Skill",
       required: true,
     },
   },

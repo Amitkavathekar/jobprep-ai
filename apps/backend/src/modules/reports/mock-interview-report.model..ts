@@ -1,23 +1,23 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 const MockInterviewsReportSchema = new Schema(
   {
     mock_interview_report_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       unique: true,
     },
     user_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "User",
       required: true,
     },
     job_resume_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "JobResume",
       required: true,
     },
     ats_analysis_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "AtsAnalysesCombinedReport",
       required: true,
     },

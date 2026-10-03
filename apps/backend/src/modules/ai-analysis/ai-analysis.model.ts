@@ -1,14 +1,14 @@
-import { Schema,model } from "mongoose"
+import { Schema,Types,model } from "mongoose"
 
 const AiAnalysisSchema = new Schema(
   {
     job_resume_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "JobResume",
       required: true,
     },
     match_level_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "MatchLevel",
       required: true,
     },

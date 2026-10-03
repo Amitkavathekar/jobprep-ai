@@ -1,14 +1,14 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 const JdGapSchema = new Schema(
   {
     Ai_analytic_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "AiAnalysis",
       required: true,
     },
     severity_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "Severity",
       required: true,
     },

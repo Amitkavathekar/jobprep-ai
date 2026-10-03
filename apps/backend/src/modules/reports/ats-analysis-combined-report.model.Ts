@@ -1,19 +1,19 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 const AtsAnalysesCombinedReportSchema = new Schema(
   {
     ats_analysis_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       required: true,
       unique: true,
     },
     job_resume_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "JobResume",
       required: true,
     },
     user_id: {
-      type: Schema.Types.ObjectId,
+      type:Types.ObjectId,
       ref: "User",
       required: true,
     },

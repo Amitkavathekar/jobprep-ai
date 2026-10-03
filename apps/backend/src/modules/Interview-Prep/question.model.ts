@@ -1,13 +1,13 @@
-import { Schema, model } from "mongoose"
+import { Schema, Types, model } from "mongoose"
 
 const QuestionSchema = new Schema(
   {
     question_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       unique: true,
     },
     category_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "QuestionCategory",
       required: true,
     },

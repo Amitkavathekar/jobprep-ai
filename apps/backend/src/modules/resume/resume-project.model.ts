@@ -1,9 +1,9 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 const ResumeProjectSchema = new Schema(
   {
     technology_type_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "TechnologyType",
       required: true,
     },

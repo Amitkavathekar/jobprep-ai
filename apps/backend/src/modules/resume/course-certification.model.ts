@@ -1,9 +1,9 @@
-import { Schema, model } from "mongoose"
+import { Schema, Types, model } from "mongoose"
 
 const CourseCertificationSchema = new Schema(
   {
     job_resume_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "JobResume",
       required: true,
     },

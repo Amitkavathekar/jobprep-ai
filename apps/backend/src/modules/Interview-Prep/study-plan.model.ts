@@ -1,18 +1,18 @@
-import { Schema, model } from "mongoose"
+import { Schema, Types, model } from "mongoose"
 
 const StudyPlanSchema = new Schema(
   {
     study_plans_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       unique: true,
     },
     status_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "Status",
       required: true,
     },
     question_bank_id: {
-      type: Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "QuestionCategory",
       required: true,
     },
