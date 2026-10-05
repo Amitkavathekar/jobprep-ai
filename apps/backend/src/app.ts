@@ -1,7 +1,8 @@
-import express, { Request, Response, } from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import routes from './routes';
+import { errorHandler } from './middlewares/error.middleware';
 
 dotenv.config();
 
@@ -19,5 +20,8 @@ app.get('/', (req: Request, res: Response) => {
 
 // All routes
 app.use('/api', routes);
+
+// Global Error Handler
+app.use(errorHandler);
 
 export default app;

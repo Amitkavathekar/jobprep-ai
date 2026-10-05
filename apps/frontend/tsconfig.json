@@ -3,10 +3,7 @@
   "compilerOptions": {
     "jsx": "preserve",
     "paths": {
-      "@/*": ["./src/*"],
-      "@workspace/ui/globals.css": ["../../packages/ui/src/styles/globals.css"],
-      "@workspace/ui/postcss.config": ["../../packages/ui/postcss.config.mjs"],
-      "@workspace/ui/*": ["../../packages/ui/src/*"]
+      "@/*": ["./src/*"]
     },
     "plugins": [
       {

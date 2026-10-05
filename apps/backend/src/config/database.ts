@@ -7,6 +7,13 @@ async function connectDb() {
       'mongodb://amit:NHOctORoHnITUbIw@ac-gzog6ib-shard-00-00.uujmrd6.mongodb.net:27017,ac-gzog6ib-shard-00-01.uujmrd6.mongodb.net:27017,ac-gzog6ib-shard-00-02.uujmrd6.mongodb.net:27017/?ssl=true&replicaSet=atlas-lvwapq-shard-0&authSource=admin';
     await mongoose.connect(mongoUri);
     console.log('Connected to MongoDB database');
+
+    try {
+      await mongoose.connection.collection('users').dropIndex('userId_1');
+      console.log('Dropped legacy userId_1 index from users collection');
+    } catch (indexErr) {
+      // Index might already be dropped or not exist
+    }
   } catch (err) {
     console.error(
       'MongoDB connection error:',

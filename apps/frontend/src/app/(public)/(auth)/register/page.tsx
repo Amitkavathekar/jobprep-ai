@@ -1,7 +1,11 @@
+import AuthCard from "@/components/common/auth";
+
 export default function RegisterPage() {
   return (
-    <main>
-      <h1>Register</h1>
+    <main className="flex h-screen w-full bg-[#07071a]">
+      <div className="flex w-full items-center justify-center">
+        <AuthCard type="register" />
+      </div>
     </main>
-  )
+  );
 }

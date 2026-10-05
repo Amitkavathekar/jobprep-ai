@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import { Geist_Mono, Inter } from "next/font/google"
 
 import { ThemeProvider } from "@/components/ThemeProvider"
-import "@workspace/ui/globals.css"
-import { cn } from "@workspace/ui/lib/utils"
+import "./globals.css"
+import { cn } from "@/lib/utils"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -45,4 +45,3 @@ export default function RootLayout({
     </html>
   )
 }
-

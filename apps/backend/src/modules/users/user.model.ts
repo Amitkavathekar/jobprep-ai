@@ -1,21 +1,14 @@
 import { model, Schema, Types } from "mongoose";
 
 const UserSchema = new Schema({
-    userId: {
-      type: String,
-      // required: true,
-      unique: true,
-    },
-
     educationDegreeId: {
       type: Types.ObjectId,
       ref: "EducationDegree",
-      // required: true,
     },
 
     fullName: {
       type: String,
-      // required: true,
+      required: true,
       trim: true,
     },
 
@@ -34,7 +27,7 @@ const UserSchema = new Schema({
 
     passwordHash: {
       type: String,
-      // required: true,
+      required: true,
     },
 
     professionalTitle: {
