@@ -2,41 +2,64 @@ import { UserModel } from "../users/user.model";
 import { LoginUserInput } from "./login.types";
 import { UnauthorizedError } from "../../errors/UnauthorizedError";
 import { comparePassword } from "../../shared/utils/password.util";
+import { generateToken } from "../../shared/utils/jwt.utils";
 
 export const loginUser = async (data: LoginUserInput) => {
-  const email = data.email;
+  const email = data.email.trim().toLowerCase();
 
-//check admin login into .env file
-  const adminEmail = process.env.ADMIN_EMAIL;
-  const adminPassword = process.env.ADMIN_PASSWORD;
-
-  if (adminEmail && email === adminEmail) {
-    if (data.password === adminPassword) {
-      return {
-        fullName: "amit kavathekar",
-        email: "amitkavathekar123@gmail.com",
-        role: "admin",
-      };
-    } else {
-      throw new UnauthorizedError("Invalid emailid or password");
+  // Admin login
+  if (email === process.env.ADMIN_EMAIL?.toLowerCase()) {
+    if (data.password !== process.env.ADMIN_PASSWORD) {
+      throw new UnauthorizedError("Invalid email or password");
     }
+
+    const token = generateToken({
+      id: "admin",
+      email,
+      role: "admin",
+    });
+
+    return {
+      token,
+      user: {
+        id: "admin",
+        fullName: "System Admin",
+        email,
+        role: "admin",
+      },
+    };
   }
 
-  //for check normal user in MongoDB
+  // Normal user login
   const user = await UserModel.findOne({ email });
+
   if (!user) {
-    throw new UnauthorizedError("Invalid emailaddress or password");
+    throw new UnauthorizedError("Invalid emailid or password");
   }
 
-  const isPasswordValid = await comparePassword(data.password, user.passwordHash);
-  if (!isPasswordValid) {
+  const passwordMatch = await comparePassword(
+    data.password,
+    user.passwordHash
+  );
+
+  if (!passwordMatch) {
     throw new UnauthorizedError("Invalid email or password");
   }
 
-  return {
-    fullName: user.fullName,
+  // Generate jwt token
+  const token = generateToken({
+    id: user._id.toString(),
     email: user.email,
     role: "user",
-    createdAt: user.createdAt,
+  });
+
+  return {
+    token,
+    user: {
+      fullName: user.fullName,
+      email: user.email,
+      role: "user",
+      createdAt: user.createdAt,
+    },
   };
 };

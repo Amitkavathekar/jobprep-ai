@@ -4,13 +4,16 @@ import api from "@/lib/axios";
 
 import { Button } from "@/components/ui/button";
 import {
-    Card,
-    CardContent,
-    CardHeader,
+  Card,
+  CardContent,
+  CardHeader,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -23,7 +26,7 @@ type AuthCardProps = {
 //loginshema
 const loginSchema = z.object({
   email: z
-        .string()
+    .string()
     .min(1, "Email is required")
     .email("Please enter a valid email"),
 
@@ -36,7 +39,7 @@ const registerSchema = z
   .object({
     fullName: z
       .string()
-        .min(2, "Full name must be at least 2 characters")
+      .min(2, "Full name must be at least 2 characters")
       .max(50, "Full name must be less than 50 characters"),
 
     email: z
@@ -66,6 +69,11 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function AuthCard({ type }: AuthCardProps) {
   const isLogin = type === "login";
+  const router = useRouter();
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
 
   //login form
 
@@ -77,7 +85,7 @@ export default function AuthCard({ type }: AuthCardProps) {
     },
   });
 
-//register form
+  //register form
   const registerForm = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -87,26 +95,48 @@ export default function AuthCard({ type }: AuthCardProps) {
       confirmPassword: "",
     },
   });
+//submit
 
-  /* -------------------- SUBMIT -------------------- */
+  const onLogin = async (data: LoginFormData) => {
+    try {
+      setAuthError(null);
+      const response = await api.post("/auth/login", {
+        email: data.email,
+        password: data.password,
+      });
 
-  const onLogin = (data: LoginFormData) => {
-    console.log("LOGIN DATA:", data);
+      console.log("login success:", response.data);
+      const role = response.data?.data?.role;
+         if (role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/user/dashboard");
+      }
+    } catch (error: any) {
+    console.error("login error:", error);
+        const message =
+        error.response?.data?.message || "Invalid emailid or password";
+    setAuthError(message);
+    }
   };
 
   const onRegister = async (data: RegisterFormData) => {
-  try {
-    const response = await api.post("/auth/register", {
-      fullName: data.fullName,
-      email: data.email,
-      password: data.password,
-    });
+    try {
+      setAuthError(null);
+      const response = await api.post("/auth/register", {
+    
+        fullName: data.fullName,
+        email: data.email,
+        password: data.password,
+      });
 
-    console.log("REGISTER SUCCESS:", response.data);
-  } catch (error) {
-    console.error("REGISTER ERROR:", error);
-  }
-};
+      router.push("/login");
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || "Registration failed. Please try again.";
+      setAuthError(message);
+    }
+  };
 
   return (
     <main className="relative isolate flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#07071a] px-5 py-10">
@@ -135,22 +165,20 @@ export default function AuthCard({ type }: AuthCardProps) {
 
               <Link
                 href="/login"
-                className={`flex-1 rounded-md px-3 py-1.5 text-center text-xs font-semibold transition-colors ${
-                  isLogin
+                className={`flex-1 rounded-md px-3 py-1.5 text-center text-xs font-semibold transition-colors ${isLogin
                     ? "bg-linear-to-r from-violet-600 to-cyan-500 text-white shadow-lg shadow-violet-950/20"
                     : "text-slate-400 hover:text-white"
-                }`}
+                  }`}
               >
                 Sign In
               </Link>
 
               <Link
                 href="/register"
-                className={`flex-1 rounded-md px-3 py-1.5 text-center text-xs font-semibold transition-colors ${
-                  !isLogin
+                className={`flex-1 rounded-md px-3 py-1.5 text-center text-xs font-semibold transition-colors ${!isLogin
                     ? "bg-linear-to-r from-violet-600 to-cyan-500 text-white shadow-lg shadow-violet-950/20"
                     : "text-slate-400 hover:text-white"
-                }`}
+                  }`}
               >
                 Create Account
               </Link>
@@ -160,6 +188,12 @@ export default function AuthCard({ type }: AuthCardProps) {
           </CardHeader>
 
           <CardContent className="px-5 pb-5">
+
+            {authError && (
+              <div className="mb-4 rounded-lg bg-red-500/10 p-2.5 text-center text-xs text-red-400 border border-red-500/20">
+                {authError}
+              </div>
+            )}
 
             {/* LOGIN FORM */}
 
@@ -207,13 +241,27 @@ export default function AuthCard({ type }: AuthCardProps) {
                       Password
                     </Label>
 
-                    <Input
-                      id="password"
-                      type="password"
-                      autoComplete="current-password"
-                      {...loginForm.register("password")}
-                      className="h-9 rounded-lg border-white/10 bg-white/4 text-sm text-white placeholder:text-slate-500 focus-visible:border-violet-400 focus-visible:ring-violet-400/20"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showLoginPassword ? "text" : "password"}
+                        autoComplete="current-password"
+                        {...loginForm.register("password")}
+                        className="h-9 rounded-lg border-white/10 bg-white/4 pr-9 text-sm text-white placeholder:text-slate-500 focus-visible:border-violet-400 focus-visible:ring-violet-400/20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword((prev) => !prev)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
+                        aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                      >
+                        {showLoginPassword ? (
+                          <EyeOff className="size-4" />
+                        ) : (
+                          <Eye className="size-4" />
+                        )}
+                      </button>
+                    </div>
 
                     {loginForm.formState.errors.password && (
                       <p className="text-xs text-red-400">
@@ -321,13 +369,27 @@ export default function AuthCard({ type }: AuthCardProps) {
                       Password
                     </Label>
 
-                    <Input
-                      id="password"
-                      type="password"
-                      autoComplete="new-password"
-                      {...registerForm.register("password")}
-                      className="h-9 rounded-lg border-white/10 bg-white/4 text-sm text-white placeholder:text-slate-500 focus-visible:border-violet-400 focus-visible:ring-violet-400/20"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showRegisterPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        {...registerForm.register("password")}
+                        className="h-9 rounded-lg border-white/10 bg-white/4 pr-9 text-sm text-white placeholder:text-slate-500 focus-visible:border-violet-400 focus-visible:ring-violet-400/20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegisterPassword((prev) => !prev)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
+                        aria-label={showRegisterPassword ? "Hide password" : "Show password"}
+                      >
+                        {showRegisterPassword ? (
+                          <EyeOff className="size-4" />
+                        ) : (
+                          <Eye className="size-4" />
+                        )}
+                      </button>
+                    </div>
 
                     {registerForm.formState.errors.password && (
                       <p className="text-xs text-red-400">
@@ -348,13 +410,29 @@ export default function AuthCard({ type }: AuthCardProps) {
                       Confirm Password
                     </Label>
 
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      autoComplete="new-password"
-                      {...registerForm.register("confirmPassword")}
-                      className="h-9 rounded-lg border-white/10 bg-white/4 text-sm text-white placeholder:text-slate-500 focus-visible:border-violet-400 focus-visible:ring-violet-400/20"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showRegisterConfirmPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        {...registerForm.register("confirmPassword")}
+                        className="h-9 rounded-lg border-white/10 bg-white/4 pr-9 text-sm text-white placeholder:text-slate-500 focus-visible:border-violet-400 focus-visible:ring-violet-400/20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegisterConfirmPassword((prev) => !prev)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
+                        aria-label={
+                          showRegisterConfirmPassword ? "Hide confirm password" : "Show confirm password"
+                        }
+                      >
+                        {showRegisterConfirmPassword ? (
+                          <EyeOff className="size-4" />
+                        ) : (
+                          <Eye className="size-4" />
+                        )}
+                      </button>
+                    </div>
 
                     {registerForm.formState.errors.confirmPassword && (
                       <p className="text-xs text-red-400">
