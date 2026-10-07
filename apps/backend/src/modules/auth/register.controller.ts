@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { registerUser } from "../auth/auth.service";
-import { RegisterUserInput } from "./auth.types";
+import { registerUser } from "./register.service";
+import { RegisterUserInput } from "./register.types";
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -16,4 +16,3 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     next(error);
   }
 };
-
