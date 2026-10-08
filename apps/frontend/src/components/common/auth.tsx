@@ -12,8 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -70,10 +70,23 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 export default function AuthCard({ type }: AuthCardProps) {
   const isLogin = type === "login";
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [authError, setAuthError] = useState<string | null>(null);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      setAuthError(errorParam);
+    }
+  }, [searchParams]);
+
+  const handleOAuth = (provider: "google" | "linkedin") => {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    window.location.href = `${backendUrl}/auth/${provider}`;
+  };
 
   //login form
 
@@ -454,6 +467,37 @@ export default function AuthCard({ type }: AuthCardProps) {
                 </div>
 
               </form>
+            )}
+
+            {/* OR CONTINUE WITH (LOGIN ONLY) */}
+            {isLogin && (
+              <div className="mt-5 flex flex-col gap-3">
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/10" />
+                  </div>
+                  <span className="relative bg-[#0d0e29] px-2 text-[11px] text-slate-400">
+                    or continue with
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleOAuth("google")}
+                    className="flex h-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-xs font-medium text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none"
+                  >
+                    Google
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOAuth("linkedin")}
+                    className="flex h-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-xs font-medium text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none"
+                  >
+                    LinkedIn
+                  </button>
+                </div>
+              </div>
             )}
 
           </CardContent>

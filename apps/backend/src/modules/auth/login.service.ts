@@ -33,7 +33,7 @@ export const loginUser = async (data: LoginUserInput) => {
   // Normal user login
   const user = await UserModel.findOne({ email });
 
-  if (!user) {
+  if (!user || !user.passwordHash) {
     throw new UnauthorizedError("Invalid emailid or password");
   }
 

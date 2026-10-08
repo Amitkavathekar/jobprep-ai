@@ -27,7 +27,18 @@ const UserSchema = new Schema({
 
     passwordHash: {
       type: String,
-      required: true,
+      required: false,
+    },
+
+    provider: {
+      type: String,
+      enum: ["local", "google", "linkedin"],
+      default: "local",
+    },
+
+    providerId: {
+      type: String,
+      trim: true,
     },
 
     professionalTitle: {
