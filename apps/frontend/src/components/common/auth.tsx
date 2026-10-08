@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -67,21 +67,26 @@ const registerSchema = z
 type LoginFormData = z.infer<typeof loginSchema>;
 type RegisterFormData = z.infer<typeof registerSchema>;
 
-export default function AuthCard({ type }: AuthCardProps) {
-  const isLogin = type === "login";
-  const router = useRouter();
+function SearchParamsHandler({ onError }: { onError: (error: string) => void }) {
   const searchParams = useSearchParams();
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
-  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
 
   useEffect(() => {
     const errorParam = searchParams.get("error");
     if (errorParam) {
-      setAuthError(errorParam);
+      onError(errorParam);
     }
-  }, [searchParams]);
+  }, [searchParams, onError]);
+
+  return null;
+}
+
+export default function AuthCard({ type }: AuthCardProps) {
+  const isLogin = type === "login";
+  const router = useRouter();
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
 
   const handleOAuth = (provider: "google" | "linkedin") => {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -153,6 +158,9 @@ export default function AuthCard({ type }: AuthCardProps) {
 
   return (
     <main className="relative isolate flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#07071a] px-5 py-10">
+      <Suspense fallback={null}>
+        <SearchParamsHandler onError={setAuthError} />
+      </Suspense>
 
       <div className="pointer-events-none absolute -left-28 -top-28 size-96 rounded-full bg-[radial-gradient(circle,rgba(124,58,237,0.24)_0%,transparent_70%)]" />
 
