@@ -1,6 +1,6 @@
 "use client";
 
-import api from "@/lib/axios";
+import api, { getApiBaseUrl } from "@/lib/axios";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -89,7 +89,7 @@ export default function AuthCard({ type }: AuthCardProps) {
   const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
 
   const handleOAuth = (provider: "google" | "linkedin") => {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const backendUrl = getApiBaseUrl();
     window.location.href = `${backendUrl}/auth/${provider}`;
   };
 
@@ -219,13 +219,13 @@ export default function AuthCard({ type }: AuthCardProps) {
             {/* LOGIN FORM */}
 
             {isLogin ? (
-              <form onSubmit={loginForm.handleSubmit(onLogin)}>
+              <form suppressHydrationWarning onSubmit={loginForm.handleSubmit(onLogin)}>
 
                 <div className="flex flex-col gap-4">
 
                   {/* EMAIL */}
 
-                  <div className="grid gap-2">
+                  <div suppressHydrationWarning className="grid gap-2">
 
                     <Label
                       htmlFor="email"
@@ -253,7 +253,7 @@ export default function AuthCard({ type }: AuthCardProps) {
 
                   {/* PASSWORD */}
 
-                  <div className="grid gap-2">
+                  <div suppressHydrationWarning className="grid gap-2">
 
                     <Label
                       htmlFor="password"
@@ -319,13 +319,13 @@ export default function AuthCard({ type }: AuthCardProps) {
 
               /* REGISTER FORM */
 
-              <form onSubmit={registerForm.handleSubmit(onRegister)}>
+              <form suppressHydrationWarning onSubmit={registerForm.handleSubmit(onRegister)}>
 
                 <div className="flex flex-col gap-4">
 
                   {/* FULL NAME */}
 
-                  <div className="grid gap-2">
+                  <div suppressHydrationWarning className="grid gap-2">
 
                     <Label
                       htmlFor="fullName"
@@ -353,7 +353,7 @@ export default function AuthCard({ type }: AuthCardProps) {
 
                   {/* EMAIL */}
 
-                  <div className="grid gap-2">
+                  <div suppressHydrationWarning className="grid gap-2">
 
                     <Label
                       htmlFor="email"
@@ -381,7 +381,7 @@ export default function AuthCard({ type }: AuthCardProps) {
 
                   {/* PASSWORD */}
 
-                  <div className="grid gap-2">
+                  <div suppressHydrationWarning className="grid gap-2">
 
                     <Label
                       htmlFor="password"
@@ -422,7 +422,7 @@ export default function AuthCard({ type }: AuthCardProps) {
 
                   {/* CONFIRM PASSWORD */}
 
-                  <div className="grid gap-2">
+                  <div suppressHydrationWarning className="grid gap-2">
 
                     <Label
                       htmlFor="confirmPassword"

@@ -30,7 +30,7 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
 
     const result = await handleGoogleCallback(code);
     return res.redirect(
-      `${frontendUrl}/auth/callback?token=${encodeURIComponent(result.token)}&role=${encodeURIComponent(result.user.role)}`
+      `${frontendUrl}/callback?token=${encodeURIComponent(result.token)}&role=${encodeURIComponent(result.user.role)}`
     );
   } catch (error: any) {
     const message = error?.message || "Google authentication failed";
@@ -58,7 +58,7 @@ export const linkedinAuthCallback = async (req: Request, res: Response) => {
 
     const result = await handleLinkedinCallback(code);
     return res.redirect(
-      `${frontendUrl}/auth/callback?token=${encodeURIComponent(result.token)}&role=${encodeURIComponent(result.user.role)}`
+      `${frontendUrl}/callback?token=${encodeURIComponent(result.token)}&role=${encodeURIComponent(result.user.role)}`
     );
   } catch (error: any) {
     const message = error?.message || "LinkedIn authentication failed";
