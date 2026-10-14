@@ -1,5 +1,4 @@
-import dotenv from 'dotenv';
-dotenv.config();
+import 'dotenv/config';
 
 import app from './app';
 import { connectDb } from './config/database';
@@ -15,4 +14,10 @@ async function start() {
     });
 
 }
-start();
+start().catch((err) => {
+  console.error(
+    'Failed to start server:',
+    err instanceof Error ? err.message : err
+  );
+  process.exitCode = 1;
+});

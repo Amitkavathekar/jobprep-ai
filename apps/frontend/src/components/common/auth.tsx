@@ -124,9 +124,19 @@ export default function AuthCard({ type }: AuthCardProps) {
       });
 
       console.log("login success:", response.data);
-      const role = response.data?.data?.role;
-         if (role === "admin") {
-        router.push("/admin");
+      const token = response.data?.data?.token || response.data?.token;
+      const user = response.data?.data?.user || response.data?.user;
+      const role = user?.role || response.data?.data?.role || response.data?.role;
+
+      if (token) {
+        localStorage.setItem("token", token);
+      }
+      if (user) {
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+
+      if (role === "admin") {
+        router.push("/admin/dashboard");
       } else {
         router.push("/user/dashboard");
       }
