@@ -53,7 +53,7 @@ async function findOrCreateOAuthUser(data: {
 // ------------------- GOOGLE OAUTH -------------------
 export const getGoogleAuthUrl = (): string => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = process.env.GOOGLE_CALLBACK_URL || "http://localhost:5000/api/auth/google/callback";
+  const redirectUri = process.env.GOOGLE_CALLBACK_URL || "http://localhost:5001/api/auth/google/callback";
 
   if (!clientId) {
     throw new BadRequestError("GOOGLE_CLIENT_ID is not configured in backend .env");
@@ -79,7 +79,7 @@ export const getGoogleAuthUrl = (): string => {
 export const handleGoogleCallback = async (code: string) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = process.env.GOOGLE_CALLBACK_URL || "http://localhost:5000/api/auth/google/callback";
+  const redirectUri = process.env.GOOGLE_CALLBACK_URL || "http://localhost:5001/api/auth/google/callback";
 
   if (!clientId || !clientSecret) {
     throw new BadRequestError("Google OAuth credentials missing in backend environment");
@@ -125,7 +125,7 @@ export const handleGoogleCallback = async (code: string) => {
 // ------------------- LINKEDIN OAUTH -------------------
 export const getLinkedinAuthUrl = (): string => {
   const clientId = process.env.LINKEDIN_CLIENT_ID;
-  const redirectUri = process.env.LINKEDIN_CALLBACK_URL || "http://localhost:5000/api/auth/linkedin/callback";
+  const redirectUri = process.env.LINKEDIN_CALLBACK_URL || "http://localhost:5001/api/auth/linkedin/callback";
 
   if (!clientId) {
     throw new BadRequestError("LINKEDIN_CLIENT_ID is not configured in backend .env");
@@ -146,7 +146,7 @@ export const getLinkedinAuthUrl = (): string => {
 export const handleLinkedinCallback = async (code: string) => {
   const clientId = process.env.LINKEDIN_CLIENT_ID;
   const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
-  const redirectUri = process.env.LINKEDIN_CALLBACK_URL || "http://localhost:5000/api/auth/linkedin/callback";
+  const redirectUri = process.env.LINKEDIN_CALLBACK_URL || "http://localhost:5001/api/auth/linkedin/callback";
 
   if (!clientId || !clientSecret) {
     throw new BadRequestError("LinkedIn OAuth credentials missing in backend environment");
