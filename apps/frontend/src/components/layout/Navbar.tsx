@@ -47,6 +47,7 @@ export default function Navbar() {
 
       <div className="hidden items-center gap-3 md:flex">
         <Button
+          nativeButton={false}
           render={<Link href="/login" />}
           variant="outline"
           size="lg"
@@ -55,6 +56,7 @@ export default function Navbar() {
           Login
         </Button>
         <Button
+          nativeButton={false}
           render={<Link href="/register" />}
           variant="default"
           size="lg"

@@ -21,3 +21,5 @@ The backend loads environment values with dotenv and validates them at startup. 
 | `FROM_EMAIL`            | `noreply@jobprep.ai`                   | Sender address                                                           |
 
 The root `.env.example` is currently empty. This table reflects `apps/backend/src/config/env.ts`; frontend-specific environment variables are not listed here because they are not defined by that backend schema.
+
+If `MONGODB_URI` does not include a database name in its path, the backend uses the `jobprep-ai` database.

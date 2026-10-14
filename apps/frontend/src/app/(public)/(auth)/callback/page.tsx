@@ -23,7 +23,7 @@ function CallbackContent() {
 
       // Redirect based on user role
       if (role === "admin") {
-        router.push("/admin");
+        router.push("/admin/dashboard");
       } else {
         router.push("/user/dashboard");
       }
