@@ -1,3 +1,11 @@
+export interface Education {
+  degree: string;
+  field_of_study: string;
+  institution: string;
+  start_year: number | "";
+  end_year: number | "";
+}
+
 export interface UserProfile {
   id?: string;
   full_name?: string;
@@ -11,6 +19,10 @@ export interface UserProfile {
   github?: string;
   linkedin?: string;
   bio?: string;
+  language?: string;
+  timezone?: string;
+  is_2fa_enabled?: boolean;
+  educationList?: Education[];
   degree?: string;
   field_of_study?: string;
   institution?: string;
