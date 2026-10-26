@@ -14,7 +14,7 @@ async function connectDb() {
       await mongoose.connection.collection('users').dropIndex('userId_1');
       console.log('Dropped legacy userId_1 index from users collection');
     } catch (indexErr) {
-      // Index might already be dropped or not exist
+      
     }
   } catch (err) {
     console.error(

@@ -13,3 +13,9 @@ export const groq = new Groq({
 
 export const GROQ_MODEL =
   process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+
+export const GROQ_MAX_TOKENS = parseInt(
+  process.env.GROQ_MAX_TOKENS || "1000",
+  10,
+);
+

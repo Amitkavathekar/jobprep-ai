@@ -23,3 +23,25 @@ export const authenticate = (req: Request,res: Response,
     });
   }
 };
+
+export const optionalAuthenticate = (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+) => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const user = verifyToken(token);
+    (req as any).user = user;
+  } catch {
+    // Ignore invalid/expired token for optional authentication
+  }
+
+  next();
+};
+

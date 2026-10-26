@@ -11,7 +11,6 @@ export const sidebarSections = [
     items: [
       { label: "Resume Builder", href: "/user/resume", icon: "✎" },
       { label: "AI Analysis", href: "/user/ai-analysis", icon: "◈" },
-      { label: "ATS Analysis", href: "/user/ats-analysis", icon: "◉" },
     ],
   },
   {

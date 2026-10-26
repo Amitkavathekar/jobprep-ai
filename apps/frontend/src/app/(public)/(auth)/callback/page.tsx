@@ -20,6 +20,7 @@ function CallbackContent() {
     if (token) {
       // Store token in localStorage
       localStorage.setItem("token", token);
+      localStorage.setItem("show_complete_profile_modal", "true");
 
       // Redirect based on user role
       if (role === "admin") {

@@ -128,12 +128,21 @@ export default function AuthCard({ type }: AuthCardProps) {
       const user = response.data?.data?.user || response.data?.user;
       const role = user?.role || response.data?.data?.role || response.data?.role;
 
+      // Clean storage so data from a previously logged in employee does not leak
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {
+        console.warn("Storage reset on login skipped:", e);
+      }
+
       if (token) {
         localStorage.setItem("token", token);
       }
       if (user) {
         localStorage.setItem("user", JSON.stringify(user));
       }
+      localStorage.setItem("show_complete_profile_modal", "true");
 
       if (role === "admin") {
         router.push("/admin/dashboard");
