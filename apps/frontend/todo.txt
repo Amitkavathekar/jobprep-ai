@@ -1,0 +1,5 @@
+- Add the Toaster component.
+<Toaster />
+
+- Add the TooltipProvider to the root of app.
+<TooltipProvider>{children}</TooltipProvider>
