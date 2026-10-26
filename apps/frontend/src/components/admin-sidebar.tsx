@@ -103,8 +103,7 @@ export function AdminSidebar() {
 
   const handleSignOut = () => {
     try {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      localStorage.clear();
       sessionStorage.clear();
       document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     } catch (e) {

@@ -1,8 +1,8 @@
-import { Schema, Types, model } from "mongoose"
+import { Schema, Types, model } from "mongoose";
 
 const JdSuggestionSchema = new Schema(
   {
-    Ai_analytic_id: {
+    ai_analysis_id: {
       type: Types.ObjectId,
       ref: "AiAnalysis",
       required: true,
@@ -27,6 +27,6 @@ const JdSuggestionSchema = new Schema(
       updatedAt: false,
     },
   }
-)
+);
 
-export const JdSuggestion = model("JdSuggestion", JdSuggestionSchema)
+export const JdSuggestion = model("JdSuggestion", JdSuggestionSchema);

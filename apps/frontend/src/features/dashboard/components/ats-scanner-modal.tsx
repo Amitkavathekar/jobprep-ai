@@ -72,10 +72,10 @@ export function AtsScannerModal({
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 10 * 1024 * 1024) {
       setResume(null)
       event.target.value = ""
-      setError("Your resume must be 5 MB or smaller.")
+      setError("Your resume must be 10 MB or smaller.")
       return
     }
 
@@ -101,10 +101,15 @@ export function AtsScannerModal({
     formData.append("targetJobRole", targetJobRole.trim())
 
     try {
-      setLoading(true)
+      const headers: Record<string, string> = {}
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`
+      }
 
       const response = await fetch(`${API_URL}/ats/analyze`, {
         method: "POST",
+        headers,
         body: formData,
       })
       const result = (await response.json()) as ATSApiResponse

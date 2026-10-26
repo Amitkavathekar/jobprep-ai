@@ -1,1 +1,1 @@
-export { default } from "../ats-analysis/page"
+export { default } from "../resume/page"

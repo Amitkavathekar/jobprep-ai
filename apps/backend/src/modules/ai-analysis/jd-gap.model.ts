@@ -2,7 +2,7 @@ import { Schema, Types, model } from "mongoose";
 
 const JdGapSchema = new Schema(
   {
-    Ai_analytic_id: {
+    ai_analysis_id: {
       type: Types.ObjectId,
       ref: "AiAnalysis",
       required: true,
@@ -30,4 +30,3 @@ const JdGapSchema = new Schema(
 );
 
 export const JdGap = model("JdGap", JdGapSchema);
-

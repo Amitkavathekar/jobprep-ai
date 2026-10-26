@@ -12,9 +12,6 @@ export function validateATSRequest(
     throw new Error("Target job role must contain at least 2 characters.");
   }
 
-  if (role.length > 100) {
-    throw new Error("Target job role cannot exceed 100 characters.");
-  }
 
   return role;
 }

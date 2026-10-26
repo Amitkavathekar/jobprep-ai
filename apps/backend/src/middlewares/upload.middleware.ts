@@ -5,13 +5,15 @@ import type { Request } from "express";
 const allowedMimeTypes = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  "application/octet-stream",
 ];
 
 export const resumeUpload = multer({
   storage: multer.memoryStorage(),
 
   limits: {
-    fileSize: 5 * 1024 * 1024,
+    fileSize: 10 * 1024 * 1024,
     files: 1,
   },
 
@@ -20,9 +22,12 @@ export const resumeUpload = multer({
     file: Express.Multer.File,
     callback: multer.FileFilterCallback,
   ) => {
-    if (!allowedMimeTypes.includes(file.mimetype)) {
+    const isAllowedMime = allowedMimeTypes.includes(file.mimetype);
+    const hasAllowedExt = /\.(pdf|docx|txt)$/i.test(file.originalname);
+
+    if (!isAllowedMime && !hasAllowedExt) {
       return callback(
-        new Error("Only PDF and DOCX resume files are supported."),
+        new Error("Only PDF, DOCX, and TXT resume files are supported."),
       );
     }
 

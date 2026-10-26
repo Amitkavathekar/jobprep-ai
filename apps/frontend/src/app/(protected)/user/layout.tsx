@@ -4,13 +4,21 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from "@/components/ui/sidebar"
+import MembershipModalProvider from "@/components/MembershipModalProvider"
+import CompleteProfileModalProvider from "@/components/CompleteProfileModalProvider"
 
 export default function UserLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <SidebarProvider
-      className="bg-[#0b0a20] [--sidebar:#201640] [--sidebar-accent:#39216d] [--sidebar-accent-foreground:#ffffff] [--sidebar-border:rgba(255,255,255,0.08)] [--sidebar-foreground:#a5a0bf] [--sidebar-primary:#7c3aed] [--sidebar-primary-foreground:#ffffff]"
+      className="bg-[#0b0a20] [--sidebar:rgba(255,255,255,0.03)] [--sidebar-accent:#39216d] [--sidebar-accent-foreground:#ffffff] [--sidebar-border:rgba(255,255,255,0.08)] [--sidebar-foreground:#a5a0bf] [--sidebar-primary:#7c3aed] [--sidebar-primary-foreground:#ffffff]"
+      style={
+        {
+          "--sidebar": "rgba(255, 255, 255, 0.03)",
+          "--sidebar-border": "rgba(255, 255, 255, 0.08)",
+        } as React.CSSProperties
+      }
     >
       <AppSidebar />
       <SidebarInset className="min-h-svh bg-[#0b0a20] text-white">
@@ -21,6 +29,9 @@ export default function UserLayout({
           {children}
         </div>
       </SidebarInset>
+      <MembershipModalProvider />
+      <CompleteProfileModalProvider />
     </SidebarProvider>
   )
 }
+
