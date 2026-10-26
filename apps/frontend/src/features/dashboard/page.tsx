@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useSyncExternalStore } from "react"
+import { useEffect, useMemo, useSyncExternalStore } from "react"
 
 import { DashboardMetrics } from "./components/dashboard-metrics"
 import { DashboardHeader } from "./components/dashboard-header"
@@ -57,6 +57,18 @@ export default function DashboardPage() {
       return null
     }
   }, [storedUser])
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const raw = localStorage.getItem("user")
+      if (raw) {
+        const timer = setTimeout(() => {
+          window.dispatchEvent(new Event("open-complete-profile-modal"))
+        }, 300)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [])
 
   return (
     <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-5 text-white">

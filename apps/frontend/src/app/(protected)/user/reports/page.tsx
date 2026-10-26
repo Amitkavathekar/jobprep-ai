@@ -1,7 +1,1 @@
-export default function ReportsPage() {
-  return (
-    <main>
-      <h1>Reports</h1>
-    </main>
-  )
-}
+export { default } from "@/features/reports/page";

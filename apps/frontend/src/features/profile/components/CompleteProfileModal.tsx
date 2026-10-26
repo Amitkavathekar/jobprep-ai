@@ -1,95 +1,15 @@
-
 "use client";
 
-import { useEffect, useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
-import type { UserProfile } from "@/app/(protected)/user/profile/types";
+import { useState, useEffect, useContext } from "react";
+import type { UserProfile, Education } from "@/app/(protected)/user/profile/types";
+import { SidebarContext } from "@/components/ui/sidebar";
+import { Eye, EyeOff } from "lucide-react";
 
-interface Education {
-  degree: string;
-  field_of_study: string;
-  institution: string;
-  start_year: number | "";
-  end_year: number | "";
-}
-
-type CompleteProfileForm = Omit<UserProfile, "start_year" | "end_year"> & {
-  start_year?: number | "";
-  end_year?: number | "";
-  educationList: Education[];
-};
-
-interface CompleteProfileModalProps {
+export interface CompleteProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   profile: UserProfile;
-  onSaveProfile: (profile: UserProfile) => void | Promise<void>;
-}
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "11px 13px",
-  borderRadius: 9,
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(255,255,255,0.04)",
-  color: "#fff",
-  boxSizing: "border-box",
-};
-
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: 13,
-  color: "#aeb8cc",
-  marginBottom: 6,
-  fontWeight: 600,
-};
-
-const sectionStyle: React.CSSProperties = {
-  background: "rgba(124,58,237,0.05)",
-  border: "1px solid rgba(124,58,237,0.2)",
-  borderRadius: 16,
-  padding: 20,
-};
-
-const buttonStyle: React.CSSProperties = {
-  padding: "10px 16px",
-  borderRadius: 9,
-  cursor: "pointer",
-};
-
-function getInitials(name?: string) {
-  return (
-    name
-      ?.trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join("")
-      .toUpperCase() || "U"
-  );
-}
-
-function getDefaultValues(profile: UserProfile): CompleteProfileForm {
-  return {
-    ...profile,
-    avatar_url: profile.avatar_url || "",
-    professional_title: profile.professional_title || "",
-    phone_no: profile.phone_no || "",
-    location: profile.location || "",
-    portfolio_url: profile.portfolio_url || "",
-    github: profile.github || "",
-    linkedin: profile.linkedin || "",
-    bio: profile.bio || "",
-    educationList: [
-      {
-        degree: profile.degree || "",
-        field_of_study: profile.field_of_study || "",
-        institution: profile.institution || "",
-        start_year: profile.start_year || "",
-        end_year: profile.end_year || "",
-      },
-    ],
-  };
+  onSaveProfile: (updatedProfile: UserProfile) => void;
 }
 
 export function CompleteProfileModal({
@@ -98,517 +18,926 @@ export function CompleteProfileModal({
   profile,
   onSaveProfile,
 }: CompleteProfileModalProps) {
-  const [showPassword, setShowPassword] = useState(false);
+  const sidebarContext = useContext(SidebarContext);
+  const isMobile = sidebarContext?.isMobile ?? false;
+  const sidebarState = sidebarContext?.state ?? "expanded";
+
+  const [formData, setFormData] = useState<UserProfile>({ ...profile });
+  const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [saveError, setSaveError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordValue, setPasswordValue] = useState("••••••••••••••••••••••••");
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    reset,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm<CompleteProfileForm>({
-    defaultValues: getDefaultValues(profile),
+  const [educationList, setEducationList] = useState<Education[]>(() => {
+    if (Array.isArray(profile.educationList) && profile.educationList.length > 0) {
+      return profile.educationList;
+    }
+    return [
+      {
+        degree: profile.degree || "Bachelor of Technology (B.Tech)",
+        field_of_study: profile.field_of_study || "Computer Science",
+        institution: profile.institution || "IIT Bombay",
+        start_year: profile.start_year || 2019,
+        end_year: profile.end_year || 2023,
+      },
+    ];
   });
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "educationList",
-  });
-
-  const avatarUrl = watch("avatar_url");
-  const fullName = watch("full_name") || "";
 
   useEffect(() => {
     if (isOpen) {
-      reset(getDefaultValues(profile));
+      setFormData({ ...profile });
+      if (Array.isArray(profile.educationList) && profile.educationList.length > 0) {
+        setEducationList(profile.educationList);
+      } else {
+        setEducationList([
+          {
+            degree: profile.degree || "Bachelor of Technology (B.Tech)",
+            field_of_study: profile.field_of_study || "Computer Science",
+            institution: profile.institution || "IIT Bombay",
+            start_year: profile.start_year || 2019,
+            end_year: profile.end_year || 2023,
+          },
+        ]);
+      }
       setShowSuccess(false);
-      setSaveError("");
     }
-  }, [isOpen, profile, reset]);
+  }, [isOpen, profile]);
+
+  const addEducation = () => {
+    setEducationList((prev) => [
+      ...prev,
+      {
+        degree: "",
+        field_of_study: "",
+        institution: "",
+        start_year: "" as any,
+        end_year: "" as any,
+      },
+    ]);
+  };
+
+  const removeEducation = (index: number) => {
+    setEducationList((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleEducationChange = (
+    index: number,
+    field: keyof Education,
+    value: string | number
+  ) => {
+    setEducationList((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const handleChange = (
+    key: keyof UserProfile,
+    value: string | boolean | number
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [key]: value,
+      updated_at: new Date().toISOString(),
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    const firstEdu = educationList[0];
+    const finalData: UserProfile = {
+      ...formData,
+      educationList,
+      degree: firstEdu?.degree || "",
+      field_of_study: firstEdu?.field_of_study || "",
+      institution: firstEdu?.institution || "",
+      start_year:
+        typeof firstEdu?.start_year === "number"
+          ? firstEdu.start_year
+          : undefined,
+      end_year:
+        typeof firstEdu?.end_year === "number"
+          ? firstEdu.end_year
+          : undefined,
+      updated_at: new Date().toISOString(),
+    };
+
+    setTimeout(() => {
+      setIsSaving(false);
+      setShowSuccess(true);
+      onSaveProfile(finalData);
+      setTimeout(() => {
+        setShowSuccess(false);
+        onClose();
+      }, 900);
+    }, 500);
+  };
+
+  const getInitials = (name?: string) => {
+    if (!name) return "U";
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
 
   if (!isOpen) return null;
 
-  // Save profile information
-  const onSubmit = async (data: CompleteProfileForm) => {
-    setSaveError("");
-    setShowSuccess(false);
-
-    try {
-      const education = data.educationList[0];
-
-      const updatedProfile: UserProfile = {
-        ...profile,
-        ...data,
-        degree: education?.degree || "",
-        field_of_study: education?.field_of_study || "",
-        institution: education?.institution || "",
-        start_year: education?.start_year || 0,
-        end_year: education?.end_year || 0,
-        updated_at: new Date().toISOString(),
-      };
-
-      delete (updatedProfile as Partial<CompleteProfileForm>)
-        .educationList;
-
-      await onSaveProfile(updatedProfile);
-      setShowSuccess(true);
-    } catch (error) {
-      console.error("Failed to save profile:", error);
-      setSaveError("Unable to save your profile. Please try again.");
-    }
-  };
-
-  // Upload profile photo
-  const handleAvatarUpload = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setSaveError("Please select a valid image file.");
-      event.target.value = "";
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      setSaveError("Image size must be less than 2 MB.");
-      event.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        reset({
-          ...watch(),
-          avatar_url: reader.result,
-        });
-        setSaveError("");
-      }
-    };
-
-    reader.readAsDataURL(file);
-  };
-
-  // Reusable input field
-  const renderField = (
-    name: keyof CompleteProfileForm,
-    label: string,
-    placeholder = "",
-    required = false
-  ) => (
-    <div>
-      <label style={labelStyle}>{label}</label>
-
-      <input
-        {...register(name, {
-          required: required ? `${label} is required` : false,
-        })}
-        placeholder={placeholder}
-        style={inputStyle}
-      />
-
-      {errors[name] && (
-        <p style={{ color: "#f87171", fontSize: 12 }}>
-          {String(errors[name]?.message)}
-        </p>
-      )}
-    </div>
-  );
+  // Compute horizontal offset so the sidebar remains completely visible and uncovered on desktop
+  const leftOffset = !isMobile
+    ? sidebarState === "collapsed"
+      ? "var(--sidebar-width-icon, 3rem)"
+      : "var(--sidebar-width, 16rem)"
+    : 0;
 
   return (
     <div
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+      className="fade-in fixed inset-y-0 right-0 z-40 flex items-center justify-center p-3 sm:p-5 transition-[left] duration-200"
       style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 10000,
-        background: "rgba(7,7,26,0.82)",
-        backdropFilter: "blur(14px)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 16,
+        left: leftOffset,
+        background: "rgba(7, 7, 26, 0.78)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        boxSizing: "border-box",
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
+        className="glass custom-scrollbar"
         style={{
           width: "100%",
-          maxWidth: 880,
+          maxWidth: 860,
           maxHeight: "92vh",
           overflowY: "auto",
           background: "#0d0d2b",
-          border: "1px solid rgba(124,58,237,0.38)",
-          borderRadius: 20,
-          padding: 28,
-          boxShadow: "0 24px 70px rgba(0,0,0,0.7)",
-          color: "#fff",
+          border: "1px solid rgba(124, 58, 237, 0.38)",
+          borderRadius: 24,
+          padding: "30px 34px",
+          boxShadow:
+            "0 24px 70px rgba(0, 0, 0, 0.85), 0 0 45px rgba(124, 58, 237, 0.35)",
+          color: "#ffffff",
+          position: "relative",
           boxSizing: "border-box",
         }}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        {/* Top Header Bar */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: "flex-start",
             marginBottom: 24,
-            paddingBottom: 18,
-            borderBottom: "1px solid rgba(255,255,255,0.1)",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            paddingBottom: 16,
           }}
         >
           <div>
-            <span style={{ color: "#a78bfa", fontSize: 11 }}>
-              CANDIDATE ACCOUNT PROFILE
-            </span>
-
-            <h2>
-              Complete Your <span style={{ color: "#a78bfa" }}>Profile</span>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "4px 14px",
+                borderRadius: 20,
+                background: "rgba(124, 58, 237, 0.15)",
+                border: "1px solid rgba(124, 58, 237, 0.3)",
+                fontSize: 11,
+                fontWeight: 700,
+                color: "#a78bfa",
+                marginBottom: 8,
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}
+            >
+              <span>⚡ CANDIDATE ACCOUNT PROFILE</span>
+            </div>
+            <h2
+              style={{
+                fontSize: 26,
+                fontWeight: 800,
+                color: "white",
+                margin: 0,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              Complete Your Profile
             </h2>
+            <p style={{ fontSize: 13, color: "rgba(148, 163, 184, 0.7)", margin: "4px 0 0" }}>
+              Please review and update your profile details to personalize your AI job prep recommendations.
+            </p>
           </div>
-
-          <button type="button" onClick={onClose} style={buttonStyle}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              background: "rgba(255, 255, 255, 0.08)",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
+              color: "rgba(148, 163, 184, 0.8)",
+              fontSize: 16,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s",
+            }}
+            title="Close / Skip"
+          >
             ✕
           </button>
         </div>
 
+        {/* Form Body */}
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit}
           style={{ display: "flex", flexDirection: "column", gap: 24 }}
         >
-          {/* Profile Photo */}
-          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+          {/* Avatar upload section */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 20,
+              background: "rgba(255, 255, 255, 0.03)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: 16,
+              padding: "16px 20px",
+            }}
+          >
             <div
               style={{
-                width: 76,
-                height: 76,
+                width: 72,
+                height: 72,
                 borderRadius: "50%",
-                overflow: "hidden",
-                background: "#7c3aed",
+                background: formData.avatar_url
+                  ? `url(${formData.avatar_url}) center/cover`
+                  : "linear-gradient(135deg, #7c3aed, #06b6d4)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: 24,
+                fontWeight: 800,
+                color: "white",
+                flexShrink: 0,
+                boxShadow: "0 0 24px rgba(124, 58, 237, 0.45)",
               }}
             >
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt="Profile"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              ) : (
-                getInitials(fullName)
-              )}
+              {!formData.avatar_url && getInitials(formData.full_name)}
             </div>
-
             <div style={{ flex: 1 }}>
-              <label style={labelStyle}>Profile Photo URL</label>
-
-              <input
-                {...register("avatar_url")}
-                placeholder="https://example.com/photo.jpg"
-                style={inputStyle}
-              />
-
-              <p style={{ fontSize: 12, color: "#94a3b8" }}>
-                Or upload an image (maximum 2 MB).
-              </p>
-
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-              />
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: "white",
+                  marginBottom: 8,
+                }}
+              >
+                Profile Photo / Avatar Upload
+              </div>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <input
+                  className="glass-input"
+                  style={{ padding: "8px 14px", fontSize: 13, flex: 1 }}
+                  placeholder="Paste Image URL (https://...)"
+                  value={formData.avatar_url || ""}
+                  onChange={(e) => handleChange("avatar_url", e.target.value)}
+                />
+                <label
+                  className="btn-ghost"
+                  style={{
+                    padding: "8px 16px",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    borderRadius: 10,
+                  }}
+                >
+                  <span>📷 Upload</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        const file = e.target.files[0];
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          if (reader.result) {
+                            handleChange("avatar_url", String(reader.result));
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
             </div>
           </div>
 
-          {/* Account Details */}
-          <section style={sectionStyle}>
-            <h3 style={{ color: "#06b6d4" }}>Account Details</h3>
+          {/* Full Name & Login Password */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 16,
+            }}
+          >
+            <div>
+              <label
+                style={{
+                  fontSize: 13,
+                  color: "rgba(148, 163, 184, 0.9)",
+                  display: "block",
+                  marginBottom: 6,
+                  fontWeight: 600,
+                }}
+              >
+                Full Name
+              </label>
+              <input
+                className="glass-input"
+                style={{
+                  background: "rgba(255, 255, 255, 0.04)",
+                  color: "rgba(255, 255, 255, 0.9)",
+                  borderColor: "rgba(255, 255, 255, 0.1)",
+                }}
+                value={formData.full_name || ""}
+                onChange={(e) => handleChange("full_name", e.target.value)}
+              />
+            </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-                gap: 16,
-              }}
-            >
-              <div>
-                <label style={labelStyle}>Full Name</label>
+            <div>
+              <label
+                style={{
+                  fontSize: 13,
+                  color: "rgba(148, 163, 184, 0.9)",
+                  display: "block",
+                  marginBottom: 6,
+                  fontWeight: 600,
+                }}
+              >
+                Login Password
+              </label>
+              <div style={{ position: "relative" }}>
                 <input
-                  value={fullName}
-                  disabled
-                  style={{ ...inputStyle, opacity: 0.6 }}
-                />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Password</label>
-                <input
+                  className="glass-input"
                   type={showPassword ? "text" : "password"}
-                  value="Password managed by your authentication provider"
-                  readOnly
-                  style={inputStyle}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.04)",
+                    color: "rgba(255, 255, 255, 0.9)",
+                    borderColor: "rgba(255, 255, 255, 0.1)",
+                    paddingRight: 40,
+                    letterSpacing: showPassword ? "normal" : "0.15em",
+                  }}
+                  value={passwordValue}
+                  onChange={(e) => setPasswordValue(e.target.value)}
+                  placeholder="••••••••••••••••"
                 />
-
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   style={{
-                    ...buttonStyle,
+                    position: "absolute",
+                    right: 12,
+                    top: "50%",
+                    transform: "translateY(-50%)",
                     background: "transparent",
-                    color: "#a78bfa",
-                    border: 0,
+                    border: "none",
+                    color: "rgba(148, 163, 184, 0.8)",
+                    cursor: "pointer",
+                    padding: 0,
+                    display: "flex",
+                    alignItems: "center",
                   }}
+                  title={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? "Hide password information" : "Show password information"}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
-          </section>
+          </div>
 
-          {/* Professional Details */}
-          <section style={sectionStyle}>
-            <h3 style={{ color: "#06b6d4" }}>
-              Professional Details & Contact Info
-            </h3>
-
+          {/* Section: Professional Details & Contact Links */}
+          <div>
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-                gap: 16,
-              }}
-            >
-              {renderField(
-                "professional_title",
-                "Professional Title",
-                "e.g. Frontend Developer",
-                true
-              )}
-
-              {renderField("phone_no", "Phone Number", "+91 98765 43210")}
-              {renderField("location", "Location", "Mumbai, India / Remote")}
-              {renderField("portfolio_url", "Portfolio URL")}
-              {renderField("github", "GitHub Profile")}
-              {renderField("linkedin", "LinkedIn Profile")}
-            </div>
-
-            <div style={{ marginTop: 16 }}>
-              <label style={labelStyle}>Bio / Candidate Summary</label>
-
-              <textarea
-                {...register("bio")}
-                rows={4}
-                placeholder="Describe your skills and experience..."
-                style={{ ...inputStyle, resize: "vertical" }}
-              />
-            </div>
-          </section>
-
-          {/* Education */}
-          <section style={sectionStyle}>
-            <div
-              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#06b6d4",
+                marginBottom: 14,
                 display: "flex",
-                justifyContent: "space-between",
                 alignItems: "center",
-                flexWrap: "wrap",
-                gap: 12,
+                gap: 8,
               }}
             >
-              <h3 style={{ color: "#a78bfa" }}>Education & Qualifications</h3>
+              <span>💼</span> Professional Details &amp; Contact Info
+            </div>
 
-              <button
-                type="button"
-                onClick={() =>
-                  append({
-                    degree: "",
-                    field_of_study: "",
-                    institution: "",
-                    start_year: "",
-                    end_year: "",
-                  })
-                }
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Professional Title & Phone Number */}
+              <div
                 style={{
-                  ...buttonStyle,
-                  background: "transparent",
-                  color: "#c4b5fd",
-                  border: "1px solid #7c3aed",
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 16,
                 }}
               >
-                + Add Education
+                <div>
+                  <label
+                    style={{
+                      fontSize: 13,
+                      color: "rgba(148, 163, 184, 0.9)",
+                      display: "block",
+                      marginBottom: 6,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Professional Title *
+                  </label>
+                  <input
+                    className="glass-input"
+                    value={formData.professional_title || ""}
+                    onChange={(e) =>
+                      handleChange("professional_title", e.target.value)
+                    }
+                    placeholder="e.g. Senior Frontend Engineer"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label
+                    style={{
+                      fontSize: 13,
+                      color: "rgba(148, 163, 184, 0.9)",
+                      display: "block",
+                      marginBottom: 6,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Phone Number (phone_no)
+                  </label>
+                  <input
+                    className="glass-input"
+                    value={formData.phone_no || ""}
+                    onChange={(e) => handleChange("phone_no", e.target.value)}
+                    placeholder="e.g. +91 98765 43210"
+                  />
+                </div>
+              </div>
+
+              {/* Location */}
+              <div>
+                <label
+                  style={{
+                    fontSize: 13,
+                    color: "rgba(148, 163, 184, 0.9)",
+                    display: "block",
+                    marginBottom: 6,
+                    fontWeight: 600,
+                  }}
+                >
+                  Location (location)
+                </label>
+                <input
+                  className="glass-input"
+                  value={formData.location || ""}
+                  onChange={(e) => handleChange("location", e.target.value)}
+                  placeholder="e.g. Mumbai, India"
+                />
+              </div>
+
+              {/* Portfolio URL, GitHub & LinkedIn Links */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr 1fr",
+                  gap: 16,
+                }}
+              >
+                <div>
+                  <label
+                    style={{
+                      fontSize: 13,
+                      color: "rgba(148, 163, 184, 0.9)",
+                      display: "block",
+                      marginBottom: 6,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Portfolio URL (portfolio_url)
+                  </label>
+                  <input
+                    className="glass-input"
+                    value={formData.portfolio_url || ""}
+                    onChange={(e) =>
+                      handleChange("portfolio_url", e.target.value)
+                    }
+                    placeholder="https://arjun-kumar.dev"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    style={{
+                      fontSize: 13,
+                      color: "rgba(148, 163, 184, 0.9)",
+                      display: "block",
+                      marginBottom: 6,
+                      fontWeight: 600,
+                    }}
+                  >
+                    GitHub Profile (github)
+                  </label>
+                  <input
+                    className="glass-input"
+                    value={formData.github || ""}
+                    onChange={(e) => handleChange("github", e.target.value)}
+                    placeholder="https://github.com/arjunkumar"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    style={{
+                      fontSize: 13,
+                      color: "rgba(148, 163, 184, 0.9)",
+                      display: "block",
+                      marginBottom: 6,
+                      fontWeight: 600,
+                    }}
+                  >
+                    LinkedIn Profile (linkedin)
+                  </label>
+                  <input
+                    className="glass-input"
+                    value={formData.linkedin || ""}
+                    onChange={(e) => handleChange("linkedin", e.target.value)}
+                    placeholder="https://linkedin.com/in/arjunkumar"
+                  />
+                </div>
+              </div>
+
+              {/* Bio / Candidate Summary */}
+              <div>
+                <label
+                  style={{
+                    fontSize: 13,
+                    color: "rgba(148, 163, 184, 0.9)",
+                    display: "block",
+                    marginBottom: 6,
+                    fontWeight: 600,
+                  }}
+                >
+                  Bio / Candidate Summary
+                </label>
+                <textarea
+                  className="glass-textarea"
+                  rows={2}
+                  value={formData.bio || ""}
+                  onChange={(e) => handleChange("bio", e.target.value)}
+                  placeholder="5+ years building scalable web applications. Passionate about DX and design systems."
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section: Education Degree (from education_degree table) */}
+          <div
+            style={{
+              background: "rgba(124, 58, 237, 0.05)",
+              border: "1px solid rgba(124, 58, 237, 0.2)",
+              borderRadius: 16,
+              padding: "18px 20px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#a78bfa",
+                marginBottom: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span>🎓</span> Education &amp; Degree Qualification
+                (education_degree)
+              </div>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={addEducation}
+                style={{
+                  fontSize: 12,
+                  padding: "5px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  borderColor: "rgba(167, 139, 250, 0.4)",
+                  color: "#a78bfa",
+                }}
+              >
+                <span>➕</span> Add Education Degree
               </button>
             </div>
 
-            {fields.map((education, index) => (
-              <div
-                key={education.id}
-                style={{
-                  padding: 16,
-                  marginTop: 16,
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 12,
-                }}
-              >
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {educationList.map((edu, index) => (
                 <div
+                  key={index}
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 16,
+                    background: "rgba(255, 255, 255, 0.02)",
+                    border: "1px solid rgba(255, 255, 255, 0.06)",
+                    borderRadius: 12,
+                    padding: 16,
+                    position: "relative",
                   }}
                 >
-                  <strong>Education {index + 1}</strong>
-
-                  {fields.length > 1 && (
+                  {educationList.length > 1 && (
                     <button
                       type="button"
-                      onClick={() => remove(index)}
+                      onClick={() => removeEducation(index)}
                       style={{
-                        ...buttonStyle,
-                        color: "#f87171",
-                        background: "transparent",
-                        border: 0,
+                        position: "absolute",
+                        top: 12,
+                        right: 12,
+                        background: "rgba(239, 68, 68, 0.15)",
+                        border: "1px solid rgba(239, 68, 68, 0.3)",
+                        color: "#ef4444",
+                        borderRadius: 6,
+                        fontSize: 11,
+                        padding: "3px 8px",
+                        cursor: "pointer",
                       }}
                     >
-                      Remove
+                      ✕ Remove
                     </button>
                   )}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 14,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 14,
+                      }}
+                    >
+                      <div>
+                        <label
+                          style={{
+                            fontSize: 12,
+                            color: "rgba(148, 163, 184, 0.9)",
+                            display: "block",
+                            marginBottom: 4,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Degree Name{" "}
+                          {educationList.length > 1 ? `#${index + 1}` : ""}
+                        </label>
+                        <input
+                          className="glass-input"
+                          value={edu.degree || ""}
+                          onChange={(e) => {
+                            handleEducationChange(
+                              index,
+                              "degree",
+                              e.target.value
+                            );
+                            if (index === 0)
+                              handleChange("degree", e.target.value);
+                          }}
+                          placeholder="e.g. Bachelor of Technology (B.Tech)"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          style={{
+                            fontSize: 12,
+                            color: "rgba(148, 163, 184, 0.9)",
+                            display: "block",
+                            marginBottom: 4,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Field of Study
+                        </label>
+                        <input
+                          className="glass-input"
+                          value={edu.field_of_study || ""}
+                          onChange={(e) => {
+                            handleEducationChange(
+                              index,
+                              "field_of_study",
+                              e.target.value
+                            );
+                            if (index === 0)
+                              handleChange("field_of_study", e.target.value);
+                          }}
+                          placeholder="e.g. Computer Science & Engineering"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        style={{
+                          fontSize: 12,
+                          color: "rgba(148, 163, 184, 0.9)",
+                          display: "block",
+                          marginBottom: 4,
+                          fontWeight: 600,
+                        }}
+                      >
+                        Institution / University Name
+                      </label>
+                      <input
+                        className="glass-input"
+                        value={edu.institution || ""}
+                        onChange={(e) => {
+                          handleEducationChange(
+                            index,
+                            "institution",
+                            e.target.value
+                          );
+                          if (index === 0)
+                            handleChange("institution", e.target.value);
+                        }}
+                        placeholder="e.g. IIT Bombay"
+                      />
+                    </div>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 14,
+                      }}
+                    >
+                      <div>
+                        <label
+                          style={{
+                            fontSize: 12,
+                            color: "rgba(148, 163, 184, 0.9)",
+                            display: "block",
+                            marginBottom: 4,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Start Year
+                        </label>
+                        <input
+                          className="glass-input"
+                          type="number"
+                          value={edu.start_year || ""}
+                          onChange={(e) => {
+                            handleEducationChange(
+                              index,
+                              "start_year",
+                              Number(e.target.value) || ("" as any)
+                            );
+                            if (index === 0)
+                              handleChange(
+                                "start_year",
+                                Number(e.target.value) || ("" as any)
+                              );
+                          }}
+                          placeholder="e.g. 2019"
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          style={{
+                            fontSize: 12,
+                            color: "rgba(148, 163, 184, 0.9)",
+                            display: "block",
+                            marginBottom: 4,
+                            fontWeight: 600,
+                          }}
+                        >
+                          End Year
+                        </label>
+                        <input
+                          className="glass-input"
+                          type="number"
+                          value={edu.end_year || ""}
+                          onChange={(e) => {
+                            handleEducationChange(
+                              index,
+                              "end_year",
+                              Number(e.target.value) || ("" as any)
+                            );
+                            if (index === 0)
+                              handleChange(
+                                "end_year",
+                                Number(e.target.value) || ("" as any)
+                              );
+                          }}
+                          placeholder="e.g. 2023"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
-                    gap: 16,
-                  }}
-                >
-                  <div>
-                    <label style={labelStyle}>Degree Name</label>
-                    <input
-                      {...register(`educationList.${index}.degree`)}
-                      placeholder="Bachelor of Technology"
-                      style={inputStyle}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={labelStyle}>Field of Study</label>
-                    <input
-                      {...register(`educationList.${index}.field_of_study`)}
-                      placeholder="Computer Science"
-                      style={inputStyle}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={labelStyle}>Institution</label>
-                    <input
-                      {...register(`educationList.${index}.institution`)}
-                      placeholder="University name"
-                      style={inputStyle}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={labelStyle}>Start Year</label>
-                    <input
-                      type="number"
-                      {...register(`educationList.${index}.start_year`, {
-                        setValueAs: (value) =>
-                          value === "" ? "" : Number(value),
-                      })}
-                      placeholder="2019"
-                      style={inputStyle}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={labelStyle}>End Year</label>
-                    <input
-                      type="number"
-                      {...register(`educationList.${index}.end_year`, {
-                        setValueAs: (value) =>
-                          value === "" ? "" : Number(value),
-                      })}
-                      placeholder="2023"
-                      style={inputStyle}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </section>
-
-          {/* Messages */}
-          {saveError && (
-            <p role="alert" style={{ color: "#f87171" }}>
-              {saveError}
-            </p>
-          )}
-
-          {showSuccess && (
-            <p role="status" style={{ color: "#34d399" }}>
-              ✓ Profile saved successfully!
-            </p>
-          )}
-
-          {/* Footer Buttons */}
+          {/* Action Buttons */}
           <div
             style={{
+              marginTop: 10,
               display: "flex",
+              alignItems: "center",
               justifyContent: "space-between",
               gap: 12,
-              flexWrap: "wrap",
+              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
               paddingTop: 18,
-              borderTop: "1px solid rgba(255,255,255,0.1)",
             }}
           >
             <button
               type="button"
+              className="btn-ghost"
               onClick={onClose}
-              style={{
-                ...buttonStyle,
-                color: "#cbd5e1",
-                background: "transparent",
-                border: "1px solid rgba(255,255,255,0.15)",
-              }}
+              style={{ padding: "10px 20px", fontSize: 13 }}
             >
               Skip for Now
             </button>
 
-            <button
-              type="submit"
-              disabled={isSubmitting || showSuccess}
-              style={{
-                ...buttonStyle,
-                background: "#7c3aed",
-                color: "#fff",
-                border: 0,
-                fontWeight: 700,
-                opacity: isSubmitting || showSuccess ? 0.7 : 1,
-              }}
-            >
-              {isSubmitting
-                ? "Saving Profile..."
-                : showSuccess
-                  ? "Profile Saved ✓"
-                  : "Save Profile Information →"}
-            </button>
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              {showSuccess && (
+                <div
+                  className="fade-in"
+                  style={{
+                    color: "#10b981",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  ✓ Profile Saved Successfully!
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={isSaving}
+                style={{
+                  padding: "11px 26px",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                {isSaving ? (
+                  <>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: 16,
+                        height: 16,
+                        border: "2px solid rgba(255,255,255,0.3)",
+                        borderTopColor: "white",
+                        borderRadius: "50%",
+                        animation: "spin-slow 0.8s linear infinite",
+                      }}
+                    />
+                    Saving Profile...
+                  </>
+                ) : (
+                  "Save Profile Information →"
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -616,3 +945,4 @@ export function CompleteProfileModal({
   );
 }
 
+export default CompleteProfileModal;

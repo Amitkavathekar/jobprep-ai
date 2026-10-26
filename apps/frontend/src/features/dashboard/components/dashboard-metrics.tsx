@@ -1,27 +1,104 @@
-const metrics = [
-  {
-    label: "ATS Match",
-    value: "74",
-    unit: "%",
-    description: "Senior FE Engineer",
-    color: "text-cyan-400",
-  },
-  {
-    label: "Interviews Completed",
-    value: "12",
-    description: "This month",
-    color: "text-emerald-400",
-  },
-  {
-    label: "Total Resumes",
-    value: "5",
-    unit: "",
-    description: "5 active resumes",
-    color: "text-amber-400",
-  },
-]
+"use client"
+
+import { useEffect, useState } from "react"
+import api from "@/lib/axios"
 
 export function DashboardMetrics() {
+  const [atsScore, setAtsScore] = useState<number | null>(null)
+  const [targetRole, setTargetRole] = useState<string>("")
+  const [resumesCount, setResumesCount] = useState<number>(0)
+  const [interviewsCount, setInterviewsCount] = useState<number>(0)
+
+  useEffect(() => {
+    try {
+      const rawUser = typeof window !== "undefined" ? localStorage.getItem("user") : null
+      let userId = ""
+      if (rawUser) {
+        const u = JSON.parse(rawUser)
+        userId = u?.id || u?._id || ""
+      }
+      if (!userId) return
+
+      // 1. Check user-scoped local storage for latest analysis
+      const userStored = localStorage.getItem(`jobprep_latest_analysis_${userId}`)
+      if (userStored) {
+        try {
+          const parsed = JSON.parse(userStored)
+          if (typeof parsed?.score === "number") {
+            setAtsScore(parsed.score)
+            setTargetRole(parsed.matchLevel || "Latest scan")
+            setResumesCount(1)
+          }
+        } catch {}
+      }
+
+      // 2. Fetch latest analysis from backend for real user data
+      api.get("/ai-analysis/latest")
+        .then((res) => {
+          if (res.data?.success && res.data?.data) {
+            const data = res.data.data
+            if (typeof data.score === "number" && data.score > 0) {
+              setAtsScore(data.score)
+              setTargetRole(data.matchLevel || "Latest scan")
+              setResumesCount(1)
+            }
+          }
+        })
+        .catch(() => {})
+
+      // 3. Fetch user mock interview count
+      api.get("/mock-interview")
+        .then((res) => {
+          if (res.data?.success && Array.isArray(res.data.data)) {
+            setInterviewsCount(res.data.data.length)
+          }
+        })
+        .catch(() => {})
+
+      // 4. Fetch user resumes count directly from database
+      const fetchResumesCount = () => {
+        api.get("/resume")
+          .then((res) => {
+            if (res.data?.success && Array.isArray(res.data.data)) {
+              setResumesCount(res.data.data.length)
+            }
+          })
+          .catch(() => {})
+      }
+      fetchResumesCount()
+
+      window.addEventListener("jobprep_resumes_updated", fetchResumesCount)
+      return () => {
+        window.removeEventListener("jobprep_resumes_updated", fetchResumesCount)
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }, [])
+
+  const metrics = [
+    {
+      label: "ATS Match",
+      value: atsScore !== null ? String(atsScore) : "0",
+      unit: "%",
+      description: atsScore !== null ? targetRole || "Match Score" : "No scan yet",
+      color: "text-cyan-400",
+    },
+    {
+      label: "Interviews Completed",
+      value: String(interviewsCount),
+      description: interviewsCount > 0 ? `${interviewsCount} completed` : "No interviews yet",
+      color: "text-emerald-400",
+    },
+    {
+      label: "Total Resumes",
+      value: String(resumesCount),
+      unit: "",
+      description: resumesCount > 0 ? `${resumesCount} active resume` : "No resumes uploaded",
+      color: "text-amber-400",
+    },
+  ]
+
   return (
     <section
       aria-label="Dashboard metrics"

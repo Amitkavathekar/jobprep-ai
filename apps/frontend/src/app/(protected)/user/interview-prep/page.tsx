@@ -1,7 +1,1 @@
-export default function InterviewPrepPage() {
-  return (
-    <main>
-      <h1>Interview prep</h1>
-    </main>
-  )
-}
+export { default } from "@/features/interview-prep/page";

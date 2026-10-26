@@ -56,6 +56,8 @@ export const loginUser = async (data: LoginUserInput) => {
   return {
     token,
     user: {
+      id: user._id.toString(),
+      _id: user._id.toString(),
       fullName: user.fullName,
       email: user.email,
       role: "user",

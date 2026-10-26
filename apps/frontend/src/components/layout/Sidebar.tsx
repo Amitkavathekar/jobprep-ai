@@ -11,9 +11,15 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`flex min-h-screen shrink-0 flex-col border-r border-white/10
-        bg-[#07071a] p-3 text-white transition-all
+      className={`flex min-h-screen shrink-0 flex-col border-r border-[rgba(255,255,255,0.08)]
+        bg-[rgba(255,255,255,0.03)] backdrop-blur-[24px] p-3 text-white transition-all
         ${isOpen ? "w-60" : "w-16"}`}
+      style={{
+        borderRight: "1px solid rgba(255,255,255,0.08)",
+        background: "rgba(255,255,255,0.03)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+      }}
     >
       <button
         type="button"

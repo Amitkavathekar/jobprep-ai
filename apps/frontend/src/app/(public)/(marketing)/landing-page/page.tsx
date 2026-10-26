@@ -111,8 +111,7 @@ export default function LandingPage() {
 
   const handleSignOut = () => {
     try {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      localStorage.clear();
       sessionStorage.clear();
       document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     } catch (e) {
@@ -309,7 +308,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <div className="text-sm font-bold text-slate-900">JobPrep AI Dashboard</div>
-                  <div className="text-[11px] text-slate-500">Welcome Back Arjun 👋</div>
+                  <div className="text-[11px] text-slate-500">Welcome Back 👋</div>
                 </div>
               </div>
 

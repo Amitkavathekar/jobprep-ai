@@ -12,7 +12,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ user }: DashboardHeaderProps) {
   const [showAtsModal, setShowAtsModal] = useState(false)
-  const firstName = user?.fullName?.trim().split(/\s+/)[0] || "Arjun"
+  const firstName = user?.fullName?.trim().split(/\s+/)[0] || ""
   const hour = new Date().getHours()
   const greeting =
     hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"
@@ -22,24 +22,29 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
       <div className="min-w-0">
         <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-[26px]">
           {greeting}
-          <span className="bg-linear-to-r from-violet-400 to-cyan-300 bg-clip-text text-transparent">
-            {firstName}
-          </span>
+          {firstName && (
+            <>
+              ,{" "}
+              <span className="bg-linear-to-r from-violet-400 to-cyan-300 bg-clip-text text-transparent">
+                {firstName}
+              </span>
+            </>
+          )}
           <span aria-hidden="true" className="ml-2">
             👋
           </span>
         </h1>
-        <p className="mt-1.5 text-sm text-slate-400">
-          {user?.professionalTitle
-            ? `Your candidate profile is active (${user.professionalTitle}).`
-            : "Your candidate profile is active (Senior Frontend Engineer)."}
-        </p>
+        
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button
-          className="border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20"
-          nativeButton={false}
-          render={<Link href="/user/profile" />}
+          type="button"
+          className="border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 cursor-pointer"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new Event("open-complete-profile-modal"));
+            }
+          }}
           variant="outline"
         >
           <UserRound aria-hidden="true" />

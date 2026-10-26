@@ -4,7 +4,12 @@ const QuestionCategorySchema = new Schema(
   {
     question_category_id: {
       type: Types.ObjectId,
-      unique: true,
+      default: () => new Types.ObjectId(),
+    },
+    user_id: {
+      type: Types.ObjectId,
+      ref: "User",
+      required: false,
     },
     job_resume_id: {
       type: Types.ObjectId,
@@ -19,6 +24,18 @@ const QuestionCategorySchema = new Schema(
       type: String,
       required: true,
     },
+    icon: {
+      type: String,
+      default: "◈",
+    },
+    color: {
+      type: String,
+      default: "#7c3aed",
+    },
+    count: {
+      type: Number,
+      default: 12,
+    },
   },
   {
     timestamps: {
@@ -28,4 +45,4 @@ const QuestionCategorySchema = new Schema(
   }
 )
 
-export const QuestionCategory = model("QuestionCategory",QuestionCategorySchema)
+export const QuestionCategory = model("QuestionCategory", QuestionCategorySchema)

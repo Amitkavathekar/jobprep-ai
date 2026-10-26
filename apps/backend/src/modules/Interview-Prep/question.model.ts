@@ -4,7 +4,12 @@ const QuestionSchema = new Schema(
   {
     question_id: {
       type: Types.ObjectId,
-      unique: true,
+      default: () => new Types.ObjectId(),
+    },
+    user_id: {
+      type: Types.ObjectId,
+      ref: "User",
+      required: false,
     },
     category_id: {
       type: Types.ObjectId,
@@ -20,8 +25,8 @@ const QuestionSchema = new Schema(
       required: true,
     },
     tags: {
-      type: Schema.Types.Mixed,
-      required: true,
+      type: [String],
+      default: [],
     },
   },
   {
