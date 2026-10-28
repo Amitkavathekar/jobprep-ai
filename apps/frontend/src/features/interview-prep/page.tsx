@@ -408,7 +408,16 @@ export default function InterviewPrep({
                 </div>
 
                 {isExpanded && (
-                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "16px 20px" }}>
+                  <div
+                    className="custom-scrollbar"
+                    style={{
+                      borderTop: "1px solid rgba(255,255,255,0.06)",
+                      padding: "16px 20px",
+                      maxHeight: "520px",
+                      overflowY: "auto",
+                      overscrollBehavior: "contain",
+                    }}
+                  >
                     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                       {/* Visible Questions (Q1 & Q2) */}
                       {bank.questions.slice(0, 2).map((item, i) => (

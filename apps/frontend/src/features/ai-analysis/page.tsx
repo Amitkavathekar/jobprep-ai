@@ -19,7 +19,31 @@ export default function AIAnalysis({
   const [loading, setLoading] = useState(true);
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [activeTab, setActiveTab] = useState<"score" | "keywords" | "gaps" | "suggestions">("score");
-  const [appliedSuggestionIds, setAppliedSuggestionIds] = useState<Set<number>>(new Set());
+  const [appliedSuggestionIds, setAppliedSuggestionIds] = useState<Set<number>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        let userId = "";
+        try {
+          const userRaw = localStorage.getItem("user");
+          if (userRaw) {
+            const u = JSON.parse(userRaw);
+            userId = u?.id || u?._id || "";
+          }
+        } catch { }
+
+        const rawApplied =
+          (userId ? localStorage.getItem(`jobprep_applied_suggestion_ids_${userId}`) : null) ||
+          localStorage.getItem("jobprep_applied_suggestion_ids");
+        if (rawApplied) {
+          const parsed = JSON.parse(rawApplied);
+          if (Array.isArray(parsed)) {
+            return new Set(parsed);
+          }
+        }
+      } catch { }
+    }
+    return new Set();
+  });
   const [previewSections, setPreviewSections] = useState<ResumeSection[]>([]);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [hasSubscription, setHasSubscription] = useState<boolean>(() => {
@@ -31,7 +55,7 @@ export default function AIAnalysis({
           const u = JSON.parse(userRaw);
           return Boolean(u?.hasActiveSubscription || u?.isSubscribed || u?.plan);
         }
-      } catch {}
+      } catch { }
     }
     return false;
   });
@@ -46,7 +70,7 @@ export default function AIAnalysis({
             setHasSubscription(true);
           }
         }
-      } catch {}
+      } catch { }
     };
     syncSub();
     window.addEventListener("subscription-updated", syncSub);
@@ -70,7 +94,7 @@ export default function AIAnalysis({
       u.plan = plan.name;
       u.planId = plan.id;
       localStorage.setItem("user", JSON.stringify(u));
-    } catch {}
+    } catch { }
     setHasSubscription(true);
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("subscription-updated", { detail: { plan } }));
@@ -87,7 +111,7 @@ export default function AIAnalysis({
             const u = JSON.parse(userRaw);
             userId = u?.id || u?._id || "";
           }
-        } catch {}
+        } catch { }
 
         // 1. Fetch saved analysis from backend
         const res = await api.get("/ai-analysis/latest").catch(() => null);
@@ -109,29 +133,77 @@ export default function AIAnalysis({
             if (parsed && typeof parsed.score === "number") {
               localAnalysis = parsed;
             }
-          } catch {}
+          } catch { }
         }
 
         const activeAnalysis = localAnalysis || backendData;
 
         if (activeAnalysis) {
           setAnalysisData(activeAnalysis);
+
+          const analysisId = activeAnalysis.id || (activeAnalysis as any)._id || activeAnalysis.createdAt || "latest";
+          const savedAnalysisId = userId
+            ? localStorage.getItem(`jobprep_applied_analysis_id_${userId}`)
+            : localStorage.getItem("jobprep_applied_analysis_id");
+
+          let savedIds: number[] = [];
+          let savedSections: ResumeSection[] | null = null;
+
+          if (savedAnalysisId === analysisId) {
+            try {
+              const rawApplied =
+                (userId ? localStorage.getItem(`jobprep_applied_suggestion_ids_${userId}`) : null) ||
+                localStorage.getItem("jobprep_applied_suggestion_ids");
+              if (rawApplied) {
+                const parsed = JSON.parse(rawApplied);
+                if (Array.isArray(parsed)) {
+                  savedIds = parsed;
+                }
+              }
+            } catch { }
+
+            try {
+              const rawPreview =
+                (userId ? localStorage.getItem(`jobprep_analysis_preview_sections_${userId}`) : null) ||
+                localStorage.getItem("jobprep_analysis_preview_sections");
+              if (rawPreview) {
+                const parsed = JSON.parse(rawPreview);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  savedSections = parsed;
+                }
+              }
+            } catch { }
+          } else {
+            // New analysis detected: initialize session ID and clean up old applied states
+            if (userId) {
+              localStorage.setItem(`jobprep_applied_analysis_id_${userId}`, analysisId);
+              localStorage.removeItem(`jobprep_applied_suggestion_ids_${userId}`);
+              localStorage.removeItem(`jobprep_analysis_preview_sections_${userId}`);
+            }
+            localStorage.setItem("jobprep_applied_analysis_id", analysisId);
+            localStorage.removeItem("jobprep_applied_suggestion_ids");
+            localStorage.removeItem("jobprep_analysis_preview_sections");
+          }
+
+          setAppliedSuggestionIds(new Set(savedIds));
           setPreviewSections(
-            backendSections.length > 0 ? backendSections : (activeAnalysis.resumeSections || [])
+            savedSections ||
+            (backendSections.length > 0 ? backendSections : (activeAnalysis.resumeSections || []))
           );
+
           if (activeAnalysis.jobDescription) {
             try {
               if (userId) {
                 localStorage.setItem(`jobprep_jd_${userId}`, activeAnalysis.jobDescription);
               }
               localStorage.setItem("jobprep_jd", activeAnalysis.jobDescription);
-            } catch {}
+            } catch { }
           }
         } else {
           setAnalysisData(null);
           setPreviewSections([]);
         }
-      } catch (err) {  
+      } catch (err) {
         console.error("Failed to load analysis:", err);
         setAnalysisData(null);
         setPreviewSections([]);
@@ -158,18 +230,47 @@ export default function AIAnalysis({
     }
   };
 
+  const persistAppliedSuggestions = (nextSet: Set<number>, nextSections: ResumeSection[]) => {
+    try {
+      let userId = "";
+      try {
+        const userRaw = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+        if (userRaw) {
+          const u = JSON.parse(userRaw);
+          userId = u?.id || u?._id || "";
+        }
+      } catch { }
+
+      const idArr = Array.from(nextSet);
+      if (userId) {
+        localStorage.setItem(`jobprep_applied_suggestion_ids_${userId}`, JSON.stringify(idArr));
+        localStorage.setItem(`jobprep_analysis_preview_sections_${userId}`, JSON.stringify(nextSections));
+        localStorage.setItem(`jobprep_final_resume_sections_${userId}`, JSON.stringify(nextSections));
+      }
+      localStorage.setItem("jobprep_applied_suggestion_ids", JSON.stringify(idArr));
+      localStorage.setItem("jobprep_analysis_preview_sections", JSON.stringify(nextSections));
+      localStorage.setItem("jobprep_final_resume_sections", JSON.stringify(nextSections));
+      localStorage.setItem("jobprep_needs_ats_scan", "true");
+    } catch (e) {
+      console.warn("Could not persist applied suggestions to localStorage:", e);
+    }
+  };
+
   const handleApplySuggestion = (s: AnalysisData["suggestions"][0]) => {
-    setAppliedSuggestionIds((prev) => new Set([...prev, s.id]));
+    const nextSet = new Set(appliedSuggestionIds);
+    nextSet.add(s.id);
+    setAppliedSuggestionIds(nextSet);
 
     setPreviewSections((prev) => {
       let modified = false;
+      let nextSections = prev;
 
       // 1. Try to add to Skills if category is Keywords
       if (s.category.toLowerCase().includes("keyword")) {
         const skillsIndex = prev.findIndex((sec) => sec.title.toLowerCase().includes("skill"));
         if (skillsIndex !== -1) {
           modified = true;
-          return prev.map((sec, idx) => {
+          nextSections = prev.map((sec, idx) => {
             if (idx === skillsIndex) {
               return {
                 ...sec,
@@ -183,24 +284,26 @@ export default function AIAnalysis({
       }
 
       // 2. Try to add to Experience section
-      const expIndex = prev.findIndex((sec) => sec.title.toLowerCase().includes("experience"));
-      if (expIndex !== -1) {
-        modified = true;
-        return prev.map((sec, idx) => {
-          if (idx === expIndex) {
-            return {
-              ...sec,
-              content: `${sec.content}\n• ${s.text}`,
-              highlights: [...(sec.highlights || []), s.text],
-            };
-          }
-          return sec;
-        });
+      if (!modified) {
+        const expIndex = prev.findIndex((sec) => sec.title.toLowerCase().includes("experience"));
+        if (expIndex !== -1) {
+          modified = true;
+          nextSections = prev.map((sec, idx) => {
+            if (idx === expIndex) {
+              return {
+                ...sec,
+                content: `${sec.content}\n• ${s.text}`,
+                highlights: [...(sec.highlights || []), s.text],
+              };
+            }
+            return sec;
+          });
+        }
       }
 
       // 3. Fallback: add to first non-header section
       if (!modified && prev.length > 1) {
-        return prev.map((sec, idx) => {
+        nextSections = prev.map((sec, idx) => {
           if (idx === 1) {
             return {
               ...sec,
@@ -212,19 +315,18 @@ export default function AIAnalysis({
         });
       }
 
-      return prev;
+      persistAppliedSuggestions(nextSet, nextSections);
+      return nextSections;
     });
   };
 
   const handleUndoSuggestion = (s: AnalysisData["suggestions"][0]) => {
-    setAppliedSuggestionIds((prev) => {
-      const next = new Set(prev);
-      next.delete(s.id);
-      return next;
-    });
+    const nextSet = new Set(appliedSuggestionIds);
+    nextSet.delete(s.id);
+    setAppliedSuggestionIds(nextSet);
 
-    setPreviewSections((prev) =>
-      prev.map((sec) => {
+    setPreviewSections((prev) => {
+      const nextSections = prev.map((sec) => {
         const withoutText = sec.content
           .replace(`\n• ${s.text}`, "")
           .replace(`, ${s.text}`, "");
@@ -234,8 +336,33 @@ export default function AIAnalysis({
           content: withoutText,
           highlights: withoutHighlight,
         };
-      })
-    );
+      });
+
+      persistAppliedSuggestions(nextSet, nextSections);
+      return nextSections;
+    });
+  };
+
+  const handlePreviewTitleChange = (index: number, newTitle: string) => {
+    setPreviewSections((prev) => {
+      const next = [...prev];
+      if (next[index]) {
+        next[index] = { ...next[index], title: newTitle };
+      }
+      persistAppliedSuggestions(appliedSuggestionIds, next);
+      return next;
+    });
+  };
+
+  const handlePreviewContentChange = (index: number, newContent: string) => {
+    setPreviewSections((prev) => {
+      const next = [...prev];
+      if (next[index]) {
+        next[index] = { ...next[index], content: newContent };
+      }
+      persistAppliedSuggestions(appliedSuggestionIds, next);
+      return next;
+    });
   };
 
   const ScoreArc = ({ value }: { value: number }) => {
@@ -684,26 +811,80 @@ export default function AIAnalysis({
                   customText="to view remaining AI suggestions"
                 >
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    {suggestions.slice(2).map((s) => (
-                      <div
-                        key={s.id}
-                        className="glass"
-                        style={{
-                          padding: "18px 22px",
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                          <div style={{ width: 28, height: 28, borderRadius: 7, background: s.impact === "high" ? "rgba(16,185,129,0.2)" : s.impact === "medium" ? "rgba(245,158,11,0.2)" : "rgba(6,182,212,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: s.impact === "high" ? "#10b981" : s.impact === "medium" ? "#f59e0b" : "#06b6d4", fontFamily: "JetBrains Mono", flexShrink: 0 }}>{s.id}</div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: "flex", gap: 8, marginBottom: 7 }}>
-                              <span className={`tag ${s.impact === "high" ? "tag-green" : s.impact === "medium" ? "tag-amber" : "tag-cyan"}`}>{s.impact} impact</span>
-                              <span className="tag tag-purple">{s.category}</span>
+                    {suggestions.slice(2).map((s) => {
+                      const isApplied = appliedSuggestionIds.has(s.id);
+                      return (
+                        <div
+                          key={s.id}
+                          className="glass"
+                          style={{
+                            padding: "18px 22px",
+                            border: isApplied ? "1px solid rgba(16, 185, 129, 0.4)" : undefined,
+                            background: isApplied ? "rgba(16, 185, 129, 0.05)" : undefined,
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: 7, background: s.impact === "high" ? "rgba(16,185,129,0.2)" : s.impact === "medium" ? "rgba(245,158,11,0.2)" : "rgba(6,182,212,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: s.impact === "high" ? "#10b981" : s.impact === "medium" ? "#f59e0b" : "#06b6d4", fontFamily: "JetBrains Mono", flexShrink: 0 }}>{s.id}</div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: "flex", gap: 8, marginBottom: 7 }}>
+                                <span className={`tag ${s.impact === "high" ? "tag-green" : s.impact === "medium" ? "tag-amber" : "tag-cyan"}`}>{s.impact} impact</span>
+                                <span className="tag tag-purple">{s.category}</span>
+                              </div>
+                              <div style={{ fontSize: 14, color: "rgba(226,232,240,0.85)", lineHeight: 1.5 }}>{s.text}</div>
                             </div>
-                            <div style={{ fontSize: 14, color: "rgba(226,232,240,0.85)", lineHeight: 1.5 }}>{s.text}</div>
+                            {isApplied ? (
+                              <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                                <button
+                                  type="button"
+                                  className="btn-ghost"
+                                  style={{
+                                    padding: "7px 12px",
+                                    fontSize: 12,
+                                    background: "rgba(16, 185, 129, 0.15)",
+                                    color: "#10b981",
+                                    border: "1px solid rgba(16, 185, 129, 0.4)",
+                                    fontWeight: 600,
+                                    cursor: "default",
+                                  }}
+                                >
+                                  ✓ Applied
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-ghost"
+                                  style={{
+                                    padding: "7px 12px",
+                                    fontSize: 12,
+                                    borderColor: "rgba(239, 68, 68, 0.4)",
+                                    color: "#fca5a5",
+                                    fontWeight: 600,
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() => handleUndoSuggestion(s)}
+                                  title="Undo and revert this suggestion from live resume preview"
+                                >
+                                  ↩ Undo
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn-primary"
+                                style={{
+                                  padding: "7px 16px",
+                                  fontSize: 12,
+                                  flexShrink: 0,
+                                  fontWeight: 600,
+                                }}
+                                onClick={() => handleApplySuggestion(s)}
+                              >
+                                Apply
+                              </button>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </LockedBlurOverlay>
               )}
@@ -743,13 +924,43 @@ export default function AIAnalysis({
               <div key={i} style={{ marginBottom: 16 }}>
                 {section.isHeader ? (
                   <div style={{ marginBottom: 12, paddingBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-                    <div className="editable-text" contentEditable suppressContentEditableWarning style={{ fontSize: 16, fontWeight: 800, color: "white", marginBottom: 4 }}>{section.title}</div>
-                    <div className="editable-text" contentEditable suppressContentEditableWarning style={{ fontSize: 11, color: "rgba(148,163,184,0.6)", lineHeight: 1.6 }}>{section.content}</div>
+                    <div
+                      className="editable-text"
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => handlePreviewTitleChange(i, e.currentTarget.textContent || "")}
+                      style={{ fontSize: 16, fontWeight: 800, color: "white", marginBottom: 4 }}
+                    >
+                      {section.title}
+                    </div>
+                    <div
+                      className="editable-text"
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => handlePreviewContentChange(i, e.currentTarget.textContent || "")}
+                      style={{ fontSize: 11, color: "rgba(148,163,184,0.6)", lineHeight: 1.6 }}
+                    >
+                      {section.content}
+                    </div>
                   </div>
                 ) : (
                   <div>
-                    <div className="editable-text" contentEditable suppressContentEditableWarning style={{ fontSize: 11, fontWeight: 700, color: "rgba(124,58,237,0.8)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5, fontFamily: "JetBrains Mono" }}>{section.title}</div>
-                    <div className="editable-text" contentEditable suppressContentEditableWarning style={{ fontSize: 12, color: "rgba(226,232,240,0.85)", lineHeight: 1.8, whiteSpace: "pre-line" }}>
+                    <div
+                      className="editable-text"
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => handlePreviewTitleChange(i, e.currentTarget.textContent || "")}
+                      style={{ fontSize: 11, fontWeight: 700, color: "rgba(124,58,237,0.8)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 5, fontFamily: "JetBrains Mono" }}
+                    >
+                      {section.title}
+                    </div>
+                    <div
+                      className="editable-text"
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => handlePreviewContentChange(i, e.currentTarget.textContent || "")}
+                      style={{ fontSize: 12, color: "rgba(226,232,240,0.85)", lineHeight: 1.8, whiteSpace: "pre-line" }}
+                    >
                       {(() => {
                         const bulleted = formatBulletContent(section.content);
                         const highlights = getSectionHighlights(section.highlights);

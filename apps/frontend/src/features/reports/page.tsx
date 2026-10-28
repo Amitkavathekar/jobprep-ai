@@ -1,7 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ClipboardList, Download, Eye, FileText, X } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Calendar,
+  ClipboardList,
+  Download,
+  Eye,
+  FileText,
+  Search,
+  X,
+} from "lucide-react";
 import api from "@/lib/axios";
 
 interface AnalysisItem {
@@ -9,6 +20,7 @@ interface AnalysisItem {
   role: string;
   company: string;
   date: string;
+  rawDate?: string;
   score: number;
   ats: number;
   matched: string[];
@@ -21,6 +33,7 @@ interface InterviewItem {
   type: string;
   role: string;
   date: string;
+  rawDate?: string;
   score: number;
   duration: string;
   questions: number;
@@ -81,6 +94,35 @@ function formatDate(dateInput: string | Date | undefined) {
   }
 }
 
+function matchesDate(rawDate?: string, displayDate?: string, targetDate?: string): boolean {
+  if (!targetDate) return true;
+  if (rawDate) {
+    try {
+      const d = new Date(rawDate);
+      if (!isNaN(d.getTime())) {
+        const utcYMD = d.toISOString().slice(0, 10);
+        if (utcYMD === targetDate) return true;
+        const localYMD = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        if (localYMD === targetDate) return true;
+      }
+    } catch {}
+  }
+  if (displayDate) {
+    try {
+      const targetObj = new Date(targetDate);
+      if (!isNaN(targetObj.getTime())) {
+        const targetFormatted = targetObj.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+        if (displayDate.toLowerCase().includes(targetFormatted.toLowerCase())) return true;
+      }
+    } catch {}
+  }
+  return false;
+}
+
 const tableHeaderStyle = {
   color: "rgba(148,163,184,0.48)",
   fontFamily: "monospace",
@@ -104,6 +146,19 @@ export default function ReportsPage() {
   const [analysisHistory, setAnalysisHistory] = useState<AnalysisItem[]>([]);
   const [interviewHistory, setInterviewHistory] = useState<InterviewItem[]>([]);
   const [summaryStats, setSummaryStats] = useState(initialSummaryStats);
+
+  // Search, date filter, and score up/down sorting state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [scoreSort, setScoreSort] = useState<"none" | "desc" | "asc">("none");
+
+  const toggleScoreSort = () => {
+    setScoreSort((prev) => {
+      if (prev === "none") return "desc";
+      if (prev === "desc") return "asc";
+      return "none";
+    });
+  };
 
   // Sync data dynamically with backend if user has real records
   useEffect(() => {
@@ -154,6 +209,7 @@ export default function ReportsPage() {
             role: item.target_job_role,
             company: item.company || "Target Role Application",
             date: formatDate(item.created_at),
+            rawDate: item.created_at,
             score: item.overall_match_score,
             ats: item.ats_parse_score,
             matched: item.matched_skills || [],
@@ -182,6 +238,7 @@ export default function ReportsPage() {
                       role: parsed.jobTitle || parsed.resumeFileName || "Target Role Application",
                       company: "Target Job",
                       date: parsed.createdAt ? formatDate(parsed.createdAt) : "Recent",
+                      rawDate: parsed.createdAt || "",
                       score: parsed.score || 0,
                       ats: parsed.score || 0,
                       matched: parsed.matchedKeywords || [],
@@ -217,6 +274,7 @@ export default function ReportsPage() {
             type: item.interview_type || "Mock Interview",
             role: item.role,
             date: formatDate(item.created_at),
+            rawDate: item.created_at,
             score: item.score,
             duration: `${item.duration_minutes || 30} min`,
             questions: item.attempted_questions || 3,
@@ -237,6 +295,58 @@ export default function ReportsPage() {
 
     fetchUserReports();
   }, []);
+
+  // Filtered and sorted ATS analysis list
+  const filteredAnalysis = useMemo(() => {
+    let list = [...analysisHistory];
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (item) =>
+          item.role.toLowerCase().includes(q) ||
+          item.company.toLowerCase().includes(q)
+      );
+    }
+
+    if (dateFilter) {
+      list = list.filter((item) => matchesDate(item.rawDate, item.date, dateFilter));
+    }
+
+    if (scoreSort === "desc") {
+      list.sort((a, b) => b.ats - a.ats);
+    } else if (scoreSort === "asc") {
+      list.sort((a, b) => a.ats - b.ats);
+    }
+
+    return list;
+  }, [analysisHistory, searchQuery, dateFilter, scoreSort]);
+
+  // Filtered and sorted Interview list
+  const filteredInterviews = useMemo(() => {
+    let list = [...interviewHistory];
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (item) =>
+          item.role.toLowerCase().includes(q) ||
+          item.type.toLowerCase().includes(q)
+      );
+    }
+
+    if (dateFilter) {
+      list = list.filter((item) => matchesDate(item.rawDate, item.date, dateFilter));
+    }
+
+    if (scoreSort === "desc") {
+      list.sort((a, b) => b.score - a.score);
+    } else if (scoreSort === "asc") {
+      list.sort((a, b) => a.score - b.score);
+    }
+
+    return list;
+  }, [interviewHistory, searchQuery, dateFilter, scoreSort]);
 
   function exportSummary() {
     const content = [
@@ -319,6 +429,104 @@ export default function ReportsPage() {
         ))}
       </div>
 
+      {/* Top Filter Bar - All Controls Aligned to the Right Side (Search placeholder to the left of Date) */}
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2.5 sm:gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3.5 shadow-sm">
+        {/* Search input with placeholder (left side of date) */}
+        <div className="relative min-w-[200px] sm:w-64">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={
+              activeTab === "analysis"
+                ? "Filter ATS records by role..."
+                : "Filter interviews by role..."
+            }
+            className="w-full rounded-xl border border-white/10 bg-[#0d0c24] py-2 pl-9 pr-8 text-xs text-slate-100 placeholder:text-slate-500 focus:border-violet-400/50 focus:outline-none focus:ring-1 focus:ring-violet-400/40"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+              aria-label="Clear search"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Date Filter (according to date) */}
+        <div className="flex items-center gap-1.5">
+          <div className="relative">
+            <Calendar className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="rounded-xl border border-white/10 bg-[#0d0c24] py-2 pl-9 pr-3 text-xs text-slate-200 placeholder:text-slate-500 focus:border-violet-400/50 focus:outline-none focus:ring-1 focus:ring-violet-400/40 [color-scheme:dark]"
+              title="Filter records by date"
+            />
+          </div>
+          {dateFilter && (
+            <button
+              type="button"
+              onClick={() => setDateFilter("")}
+              className="rounded-xl border border-white/10 bg-white/[0.04] p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
+              title="Clear date filter"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Up and Down button of ATS score */}
+        <button
+          type="button"
+          onClick={toggleScoreSort}
+          className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+            scoreSort !== "none"
+              ? "border-violet-400/50 bg-violet-500/20 text-violet-200 shadow-sm shadow-violet-950/30"
+              : "border-white/10 bg-[#0d0c24] text-slate-300 hover:border-white/20 hover:text-white"
+          }`}
+          title="Sort by score: click to toggle High-to-Low or Low-to-High"
+        >
+          {scoreSort === "desc" ? (
+            <>
+              <ArrowDown className="size-3.5 text-emerald-400" />
+              <span>{activeTab === "analysis" ? "ATS Score" : "Score"}: High → Low (▼)</span>
+            </>
+          ) : scoreSort === "asc" ? (
+            <>
+              <ArrowUp className="size-3.5 text-cyan-400" />
+              <span>{activeTab === "analysis" ? "ATS Score" : "Score"}: Low → High (▲)</span>
+            </>
+          ) : (
+            <>
+              <ArrowUpDown className="size-3.5 text-slate-400" />
+              <span>{activeTab === "analysis" ? "ATS Score Sort (▲/▼)" : "Score Sort (▲/▼)"}</span>
+            </>
+          )}
+        </button>
+
+        {/* Reset button when any filter is active */}
+        {(searchQuery || dateFilter || scoreSort !== "none") && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery("");
+              setDateFilter("");
+              setScoreSort("none");
+            }}
+            className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-slate-400 transition hover:bg-white/[0.08] hover:text-slate-200"
+            title="Reset all filters"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+
       {activeTab === "analysis" ? (
         <section
           role="tabpanel"
@@ -330,25 +538,53 @@ export default function ReportsPage() {
               <div className="grid grid-cols-[minmax(220px,1fr)_140px_100px_90px] gap-4 border-b border-white/[0.06] px-5 py-4">
                 <div style={{ ...tableHeaderStyle, textAlign: "left" }}>NAME</div>
                 <div style={tableHeaderStyle}>DATE</div>
-                <div style={tableHeaderStyle}>ATS</div>
+                <button
+                  type="button"
+                  onClick={toggleScoreSort}
+                  className="inline-flex items-center justify-center gap-1 w-full text-center hover:text-white transition cursor-pointer"
+                  style={tableHeaderStyle}
+                  title="Sort by ATS score (click for up / down)"
+                >
+                  <span>ATS</span>
+                  <span className="text-[10px] text-violet-400">
+                    {scoreSort === "desc" ? "▼" : scoreSort === "asc" ? "▲" : "⇅"}
+                  </span>
+                </button>
                 <div style={tableHeaderStyle}>VIEW</div>
               </div>
-              {analysisHistory.length === 0 ? (
+              {filteredAnalysis.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 text-center">
                   <div className="mb-3 flex size-12 items-center justify-center rounded-2xl border border-violet-400/20 bg-violet-500/10 text-violet-300">
                     <FileText className="size-6" />
                   </div>
-                  <h3 className="text-base font-semibold text-white">No ATS Analyses Yet</h3>
+                  <h3 className="text-base font-semibold text-white">
+                    {analysisHistory.length === 0 ? "No ATS Analyses Yet" : "No Matching ATS Reports Found"}
+                  </h3>
                   <p className="mt-1 max-w-sm text-xs text-slate-400">
-                    Upload your resume and target job description in Step 1 to generate your ATS analysis reports.
+                    {analysisHistory.length === 0
+                      ? "Upload your resume and target job description in Step 1 to generate your ATS analysis reports."
+                      : "Try adjusting your search query, date filter, or reset your filters."}
                   </p>
+                  {analysisHistory.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setDateFilter("");
+                        setScoreSort("none");
+                      }}
+                      className="mt-4 rounded-lg border border-violet-400/30 bg-violet-500/15 px-3.5 py-1.5 text-xs font-semibold text-violet-300 hover:bg-violet-500/25 transition"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
                 </div>
               ) : (
-                analysisHistory.map((item, index) => (
+                filteredAnalysis.map((item, index) => (
                   <div
                     key={item.id}
                     className={`grid grid-cols-[minmax(220px,1fr)_140px_100px_90px] items-center gap-4 px-5 py-4 transition hover:bg-white/[0.035] ${
-                      index < analysisHistory.length - 1 ? "border-b border-white/[0.04]" : ""
+                      index < filteredAnalysis.length - 1 ? "border-b border-white/[0.04]" : ""
                     }`}
                   >
                     <div className="text-sm font-semibold text-white">{item.role}</div>
@@ -381,24 +617,60 @@ export default function ReportsPage() {
           <div className="overflow-x-auto">
             <div className="min-w-[850px]">
               <div className="grid grid-cols-[minmax(190px,1fr)_110px_100px_145px_80px_90px] gap-3 border-b border-white/[0.06] px-5 py-4">
-                {["Type & Role", "Date", "Duration", "Attempted Questions", "Score", "View"].map((heading, index) => (
-                  <div key={heading} style={{ ...tableHeaderStyle, textAlign: index === 0 ? "left" : "center" }}>
-                    {heading.toUpperCase()}
-                  </div>
-                ))}
+                {["Type & Role", "Date", "Duration", "Attempted Questions", "Score", "View"].map((heading, index) => {
+                  if (heading === "Score") {
+                    return (
+                      <button
+                        key={heading}
+                        type="button"
+                        onClick={toggleScoreSort}
+                        className="inline-flex items-center justify-center gap-1 w-full text-center hover:text-white transition cursor-pointer"
+                        style={tableHeaderStyle}
+                        title="Sort by score (click for up / down)"
+                      >
+                        <span>SCORE</span>
+                        <span className="text-[10px] text-cyan-400">
+                          {scoreSort === "desc" ? "▼" : scoreSort === "asc" ? "▲" : "⇅"}
+                        </span>
+                      </button>
+                    );
+                  }
+                  return (
+                    <div key={heading} style={{ ...tableHeaderStyle, textAlign: index === 0 ? "left" : "center" }}>
+                      {heading.toUpperCase()}
+                    </div>
+                  );
+                })}
               </div>
-              {interviewHistory.length === 0 ? (
+              {filteredInterviews.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 text-center">
                   <div className="mb-3 flex size-12 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/10 text-cyan-300">
                     <ClipboardList className="size-6" />
                   </div>
-                  <h3 className="text-base font-semibold text-white">No Mock Interviews Yet</h3>
+                  <h3 className="text-base font-semibold text-white">
+                    {interviewHistory.length === 0 ? "No Mock Interviews Yet" : "No Matching Interviews Found"}
+                  </h3>
                   <p className="mt-1 max-w-sm text-xs text-slate-400">
-                    Complete your first mock interview to track questions, scores, and detailed AI feedback.
+                    {interviewHistory.length === 0
+                      ? "Complete your first mock interview to track questions, scores, and detailed AI feedback."
+                      : "Try adjusting your search query, date filter, or reset your filters."}
                   </p>
+                  {interviewHistory.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setDateFilter("");
+                        setScoreSort("none");
+                      }}
+                      className="mt-4 rounded-lg border border-cyan-400/30 bg-cyan-500/15 px-3.5 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/25 transition"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
                 </div>
               ) : (
-                interviewHistory.map((item, index) => (
+                filteredInterviews.map((item, index) => (
                   <div
                     key={item.id}
                     className={`grid grid-cols-[minmax(190px,1fr)_110px_100px_145px_80px_90px] items-center gap-3 px-5 py-4 transition hover:bg-white/[0.035] ${

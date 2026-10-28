@@ -135,11 +135,19 @@ function parseAIResponse(content: string): ATSAnalysisResult {
 }
 
 export async function analyzeResume(
-  file: Express.Multer.File,
+  fileOrText: Express.Multer.File | string,
   requestedRole: unknown,
+  jobDescription?: string,
 ): Promise<ATSAnalysisResult> {
   const targetJobRole = validateATSRequest(requestedRole);
-  const resumeText = await extractResumeText(file);
+  const resumeText =
+    typeof fileOrText === "string"
+      ? fileOrText.trim()
+      : await extractResumeText(fileOrText);
+
+  if (!resumeText || resumeText.length < 15) {
+    throw new Error("Resume content is empty or too short to analyze.");
+  }
 
   const tokenBudget = Math.max(400, GROQ_MAX_TOKENS);
   const maxItemsPerList = tokenBudget <= 650 ? 3 : tokenBudget <= 1000 ? 5 : 8;
@@ -148,24 +156,29 @@ export async function analyzeResume(
       ? "Provide a concise summary in 1-2 brief sentences."
       : "Provide a clear summary in 2-3 sentences.";
 
+  const jdContext =
+    jobDescription && typeof jobDescription === "string" && jobDescription.trim().length > 10
+      ? `\nTARGET JOB DESCRIPTION:\n"""\n${jobDescription.trim().slice(0, 1500)}\n"""\n`
+      : "";
+
   const prompt = `
 You are an experienced resume reviewer and ATS (Applicant Tracking System) analyst.
 
-Analyze the resume against the target job role provided below.
+Analyze the resume (which is the user's latest edited resume) against the target job role and job description provided below.
 
 TARGET JOB ROLE:
 ${targetJobRole}
-
+${jdContext}
 RESUME TEXT:
 """
-${resumeText}
+${resumeText.slice(0, 4500)}
 """
 
 RULES & BUDGET:
-1. Infer typical expectations dynamically for this role without hardcoding.
-2. Evaluate actual resume content against inferred expectations. Do not invent details.
-3. Only mark a skill as matched if evidenced in the resume.
-4. Give a realistic score from 0 to 100.
+1. Evaluate actual resume content strictly against the target job role and job description.
+2. Only mark a skill as matched if evidenced in the resume text.
+3. Mark skills and keywords required by the target job role/description but missing in the resume as missingSkills.
+4. Give a realistic ATS compatibility score from 0 to 100 based on keyword match, structure, and qualifications.
 5. STRICT TOKEN BUDGET (${tokenBudget} tokens):
    - You MUST complete the entire JSON response strictly within ${tokenBudget} tokens.
    - ${summaryGuidance}

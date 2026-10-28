@@ -19,3 +19,18 @@ export interface Coupon {
   expiresAt?: string;
 }
 
+export interface SupportTicket {
+  id: string;
+  category: "Technical Issue" | "Billing & Payment" | "Resume AI / ATS" | "Mock Interview" | "Account & Other" | string;
+  subject: string;
+  description: string;
+  priority: "Low" | "Medium" | "High" | "Urgent" | string;
+  status?: string;
+  createdAt?: string;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+

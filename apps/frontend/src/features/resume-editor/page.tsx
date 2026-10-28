@@ -269,6 +269,32 @@ export function generateSuggestionsFromResume(
   return suggestions;
 }
 
+export function getSectionMeta(title: string, isHeader?: boolean) {
+  if (isHeader) {
+    return { label: "Personal Information & Header", icon: "👤", color: "#67e8f9" };
+  }
+  const t = (title || "").toLowerCase();
+  if (t.includes("summary") || t.includes("profile") || t.includes("objective") || t.includes("about")) {
+    return { label: "Professional Summary", icon: "🎯", color: "#a78bfa" };
+  }
+  if (t.includes("experience") || t.includes("employment") || t.includes("work") || t.includes("career")) {
+    return { label: "Work Experience", icon: "💼", color: "#60a5fa" };
+  }
+  if (t.includes("project")) {
+    return { label: "Projects & Portfolios", icon: "🚀", color: "#34d399" };
+  }
+  if (t.includes("skill") || t.includes("technolog") || t.includes("competenc") || t.includes("tool")) {
+    return { label: "Technical Skills", icon: "⚡", color: "#f472b6" };
+  }
+  if (t.includes("education") || t.includes("academic") || t.includes("degree") || t.includes("university")) {
+    return { label: "Education & Academics", icon: "🎓", color: "#fbbf24" };
+  }
+  if (t.includes("certif") || t.includes("license") || t.includes("course") || t.includes("award")) {
+    return { label: "Certifications & Credentials", icon: "🏆", color: "#c084fc" };
+  }
+  return { label: "Resume Section", icon: "📄", color: "#94a3b8" };
+}
+
 export default function ResumeEditor({
   onNavigate,
   hasActiveSubscription = false,
@@ -278,6 +304,8 @@ export default function ResumeEditor({
   const [loading, setLoading] = useState(true);
   const [editorSections, setEditorSections] = useState<ResumeSectionItem[]>([]);
   const [baseSections, setBaseSections] = useState<ResumeSectionItem[]>([]);
+  const [originalAiSections, setOriginalAiSections] = useState<ResumeSectionItem[]>([]);
+  const [rawAnalysisData, setRawAnalysisData] = useState<any>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [editing, setEditing] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
@@ -293,7 +321,7 @@ export default function ResumeEditor({
       try {
         const u = JSON.parse(localStorage.getItem("user") || "{}");
         if (u?.hasActiveSubscription || u?.isSubscribed || u?.plan) return true;
-      } catch {}
+      } catch { }
     }
     return false;
   });
@@ -308,7 +336,7 @@ export default function ResumeEditor({
             setHasSubscription(true);
           }
         }
-      } catch {}
+      } catch { }
     };
     window.addEventListener("subscription-updated", handleSubUpdated);
     return () => window.removeEventListener("subscription-updated", handleSubUpdated);
@@ -334,50 +362,127 @@ export default function ResumeEditor({
             const u = JSON.parse(userRaw);
             userId = u?.id || u?._id || "";
           }
-        } catch {}
+        } catch { }
 
-        // 1. Check local storage for latest analysis
-        const userStored =
-          (userId ? localStorage.getItem(`jobprep_latest_analysis_${userId}`) : null) ||
-          (typeof window !== "undefined" ? localStorage.getItem("jobprep_latest_analysis") : null);
-
+        // 1. Fetch saved analysis from backend as the primary single source of truth
         let activeData: any = null;
-        if (userStored) {
-          try {
-            activeData = JSON.parse(userStored);
-          } catch {}
-        }
-
-        // 2. Fetch from backend if not in local storage or incomplete
-        if (!activeData?.resumeSections || activeData.resumeSections.length === 0) {
-          const res = await api.get("/ai-analysis/latest").catch(() => null);
+        try {
+          const res = await api.get("/ai-analysis/latest");
           if (res?.data?.success && res.data?.data) {
             activeData = res.data.data;
           }
+        } catch (e) {
+          console.warn("Backend /ai-analysis/latest fetch skipped:", e);
         }
 
-        if (activeData?.resumeSections && Array.isArray(activeData.resumeSections) && activeData.resumeSections.length > 0) {
-          const realSections: ResumeSectionItem[] = activeData.resumeSections;
-          setBaseSections(realSections);
-          setEditorSections(realSections);
+        // 2. Fall back to local storage if backend call is empty or offline
+        if (!activeData || !activeData.resumeSections || activeData.resumeSections.length === 0) {
+          const userStored =
+            (userId ? localStorage.getItem(`jobprep_latest_analysis_${userId}`) : null) ||
+            (typeof window !== "undefined" ? localStorage.getItem("jobprep_latest_analysis") : null);
+          if (userStored) {
+            try {
+              activeData = JSON.parse(userStored);
+            } catch { }
+          }
+        }
+
+        // 3. Extract the real AI-analyzed sections
+        const aiSections: ResumeSectionItem[] =
+          activeData?.resumeSections && Array.isArray(activeData.resumeSections) && activeData.resumeSections.length > 0
+            ? activeData.resumeSections.map((s: any) => ({
+              title: s.title || "Section",
+              isHeader: Boolean(s.isHeader),
+              content: s.content || "",
+            }))
+            : [];
+
+        if (aiSections.length > 0) {
+          setOriginalAiSections(aiSections);
+          setRawAnalysisData(activeData);
+
+          const analysisId = activeData?.id || activeData?._id || activeData?.createdAt || "latest";
+          const savedAnalysisId = userId
+            ? localStorage.getItem(`jobprep_final_analysis_id_${userId}`)
+            : localStorage.getItem("jobprep_final_analysis_id");
+
+          let sectionsToUse = aiSections;
+
+          // Only keep previously edited draft if it belongs to this exact analysis instance
+          if (savedAnalysisId === analysisId) {
+            const savedFinalRaw =
+              (userId ? localStorage.getItem(`jobprep_final_resume_sections_${userId}`) : null) ||
+              (typeof window !== "undefined" ? localStorage.getItem("jobprep_final_resume_sections") : null);
+            if (savedFinalRaw) {
+              try {
+                const parsed = JSON.parse(savedFinalRaw);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  sectionsToUse = parsed;
+                }
+              } catch { }
+            }
+          } else {
+            // New AI analysis detected: clear old outdated sections and set current analysis ID
+            if (userId) {
+              localStorage.setItem(`jobprep_final_analysis_id_${userId}`, analysisId);
+              localStorage.removeItem(`jobprep_final_resume_sections_${userId}`);
+              localStorage.removeItem(`jobprep_editor_suggestion_statuses_${userId}`);
+            }
+            localStorage.setItem("jobprep_final_analysis_id", analysisId);
+            localStorage.removeItem("jobprep_final_resume_sections");
+            localStorage.removeItem("jobprep_editor_suggestion_statuses");
+          }
+
+          setBaseSections(sectionsToUse);
+          setEditorSections(sectionsToUse);
 
           // Extract candidate name from header section or parsed resume
-          const header = realSections.find((s) => s.isHeader);
-          const cName = activeData.parsedResume?.candidateName || header?.title || "Candidate";
+          const header = sectionsToUse.find((s) => s.isHeader);
+          const cName =
+            activeData?.parsedResume?.candidateName ||
+            header?.title ||
+            "Candidate";
           setCandidateName(cName);
 
           const rName =
-            activeData.resumeFileName ||
+            activeData?.resumeFileName ||
             (userId ? localStorage.getItem(`jobprep_uploaded_resume_name_${userId}`) : null) ||
             localStorage.getItem("jobprep_uploaded_resume_name") ||
             `${cName.replace(/\s+/g, "_")}_Resume.pdf`;
           setResumeFileName(rName);
 
-          // Generate dynamic, AI-powered suggestions based on the user's ACTUAL resume preview content
-          const dynamicSuggestions = generateSuggestionsFromResume(realSections, activeData);
-          setSuggestions(dynamicSuggestions);
+          // Generate dynamic, AI-powered suggestions based on the original AI resume sections
+          const dynamicSuggestions = generateSuggestionsFromResume(aiSections.length > 0 ? aiSections : sectionsToUse, activeData);
+
+          // Restore saved suggestion statuses from localStorage
+          let savedStatusesMap: Record<string, { status: Status; customSuggested?: string }> = {};
+          if (savedAnalysisId === analysisId) {
+            try {
+              const rawStatuses =
+                (userId ? localStorage.getItem(`jobprep_editor_suggestion_statuses_${userId}`) : null) ||
+                localStorage.getItem("jobprep_editor_suggestion_statuses");
+              if (rawStatuses) {
+                savedStatusesMap = JSON.parse(rawStatuses);
+              }
+            } catch { }
+          }
+
+          const restoredSuggestions = dynamicSuggestions.map((s) => {
+            const contentKey = `${s.section}:::${s.original.trim()}`;
+            const idKey = `id_${s.id}`;
+            const saved = savedStatusesMap[contentKey] || savedStatusesMap[idKey];
+            if (saved) {
+              return {
+                ...s,
+                status: saved.status,
+                suggested: saved.customSuggested || s.suggested,
+              };
+            }
+            return s;
+          });
+
+          setSuggestions(restoredSuggestions);
         } else {
-          // If no resume found yet, check uploaded meta or initialize empty
           setBaseSections([]);
           setEditorSections([]);
           setSuggestions([]);
@@ -392,14 +497,80 @@ export default function ResumeEditor({
     loadRealResume();
   }, []);
 
+  // Sync final edited resume to localStorage whenever editorSections changes
+  useEffect(() => {
+    if (!editorSections || editorSections.length === 0) return;
+    try {
+      let userId = "";
+      try {
+        const userRaw = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+        if (userRaw) {
+          const u = JSON.parse(userRaw);
+          userId = u?.id || u?._id || "";
+        }
+      } catch { }
+
+      const fullText = editorSections
+        .map((sec) => `${sec.title.toUpperCase()}\n${sec.content}`)
+        .join("\n\n");
+
+      const now = String(Date.now());
+      if (userId) {
+        localStorage.setItem(`jobprep_final_resume_sections_${userId}`, JSON.stringify(editorSections));
+        localStorage.setItem(`jobprep_final_resume_text_${userId}`, fullText);
+        localStorage.setItem(`jobprep_final_resume_updated_at_${userId}`, now);
+      }
+      localStorage.setItem("jobprep_final_resume_sections", JSON.stringify(editorSections));
+      localStorage.setItem("jobprep_final_resume_text", fullText);
+      localStorage.setItem("jobprep_final_resume_updated_at", now);
+      localStorage.setItem("jobprep_needs_ats_scan", "true");
+    } catch (e) {
+      console.warn("Could not sync final resume to localStorage:", e);
+    }
+  }, [editorSections]);
+
+  const persistSuggestionStatuses = (updatedSuggestions: Suggestion[]) => {
+    try {
+      let userId = "";
+      try {
+        const userRaw = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+        if (userRaw) {
+          const u = JSON.parse(userRaw);
+          userId = u?.id || u?._id || "";
+        }
+      } catch { }
+
+      const mapToSave: Record<string, { status: Status; customSuggested?: string }> = {};
+      updatedSuggestions.forEach((s) => {
+        const contentKey = `${s.section}:::${s.original.trim()}`;
+        const idKey = `id_${s.id}`;
+        const data = { status: s.status, customSuggested: s.suggested };
+        mapToSave[contentKey] = data;
+        mapToSave[idKey] = data;
+      });
+
+      if (userId) {
+        localStorage.setItem(`jobprep_editor_suggestion_statuses_${userId}`, JSON.stringify(mapToSave));
+      }
+      localStorage.setItem("jobprep_editor_suggestion_statuses", JSON.stringify(mapToSave));
+    } catch (e) {
+      console.warn("Failed to persist suggestion statuses:", e);
+    }
+  };
+
   const applySuggestionsToSections = (currentSuggestions: Suggestion[]) => {
-    let updatedSecs = baseSections.map((sec) => ({ ...sec }));
+    const sourceSections = originalAiSections.length > 0 ? originalAiSections : baseSections;
+    let updatedSecs = sourceSections.map((sec) => ({ ...sec }));
 
     currentSuggestions.forEach((s) => {
       if (s.status === "accepted") {
         let applied = false;
 
         updatedSecs = updatedSecs.map((sec) => {
+          if (sec.content.includes(s.suggested)) {
+            applied = true;
+            return sec;
+          }
           if (sec.content.includes(s.original)) {
             applied = true;
             return {
@@ -410,12 +581,12 @@ export default function ResumeEditor({
           return sec;
         });
 
-        // Fallback: If exact substring was not found, intelligently append suggestion bullet into matching section
+        // Fallback: If exact substring was not found, append suggestion bullet into matching section
         if (!applied) {
           const matchSec = updatedSecs.find((sec) =>
             sec.title.toLowerCase().includes(s.section.toLowerCase())
           );
-          if (matchSec) {
+          if (matchSec && !matchSec.content.includes(s.suggested)) {
             matchSec.content = `${matchSec.content}\n• ${s.suggested}`;
           }
         }
@@ -429,6 +600,7 @@ export default function ResumeEditor({
     const updated = suggestions.map((s) => (s.id === id ? { ...s, status } : s));
     setSuggestions(updated);
     applySuggestionsToSections(updated);
+    persistSuggestionStatuses(updated);
   };
 
   const startEdit = (s: Suggestion) => {
@@ -442,6 +614,7 @@ export default function ResumeEditor({
     );
     setSuggestions(updated);
     applySuggestionsToSections(updated);
+    persistSuggestionStatuses(updated);
     setEditing(null);
   };
 
@@ -456,7 +629,101 @@ export default function ResumeEditor({
       next[index] = { ...next[index], content: newContent };
       return next;
     });
+    setOriginalAiSections((prev) => {
+      const next = [...prev];
+      if (next[index]) {
+        next[index] = { ...next[index], content: newContent };
+      }
+      return next;
+    });
   };
+
+  const handleSectionTitleChange = (index: number, newTitle: string) => {
+    setEditorSections((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], title: newTitle };
+      return next;
+    });
+    setBaseSections((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], title: newTitle };
+      return next;
+    });
+    setOriginalAiSections((prev) => {
+      const next = [...prev];
+      if (next[index]) {
+        next[index] = { ...next[index], title: newTitle };
+      }
+      return next;
+    });
+    if (editorSections[index]?.isHeader) {
+      setCandidateName(newTitle);
+    }
+  };
+
+  const handleAddBulletToSection = (index: number) => {
+    setEditorSections((prev) => {
+      const next = [...prev];
+      const cur = next[index]?.content || "";
+      next[index] = { ...next[index], content: cur ? `${cur}\n• ` : "• " };
+      return next;
+    });
+    setBaseSections((prev) => {
+      const next = [...prev];
+      const cur = next[index]?.content || "";
+      next[index] = { ...next[index], content: cur ? `${cur}\n• ` : "• " };
+      return next;
+    });
+  };
+
+  const handleAddSection = () => {
+    const newSec: ResumeSectionItem = {
+      title: "ADDITIONAL SECTION",
+      content: "• Highlight key accomplishments, leadership, or specialized competencies",
+    };
+    setEditorSections((prev) => [...prev, newSec]);
+    setBaseSections((prev) => [...prev, newSec]);
+  };
+
+  const handleRemoveSection = (index: number) => {
+    if (editorSections[index]?.isHeader) {
+      alert("The personal contact header cannot be removed.");
+      return;
+    }
+    setEditorSections((prev) => prev.filter((_, i) => i !== index));
+    setBaseSections((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleMoveSection = (index: number, direction: "up" | "down") => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 1 || targetIndex >= editorSections.length) return;
+    setEditorSections((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(index, 1);
+      next.splice(targetIndex, 0, moved);
+      return next;
+    });
+    setBaseSections((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(index, 1);
+      next.splice(targetIndex, 0, moved);
+      return next;
+    });
+  };
+
+  const handleResetToAiAnalysis = () => {
+    if (originalAiSections.length > 0) {
+      setBaseSections(originalAiSections.map((s) => ({ ...s })));
+      setEditorSections(originalAiSections.map((s) => ({ ...s })));
+      const dynamicSuggestions = generateSuggestionsFromResume(originalAiSections, rawAnalysisData);
+      setSuggestions(dynamicSuggestions);
+      const header = originalAiSections.find((s) => s.isHeader);
+      if (header?.title) setCandidateName(header.title);
+    }
+  };
+
+  const pendingSuggestionsCount = suggestions.filter((s) => s.status === "pending").length;
+  const acceptedSuggestionsCount = suggestions.filter((s) => s.status === "accepted").length;
 
   const handleDownload = () => {
     setSaved(true);
@@ -483,11 +750,11 @@ export default function ResumeEditor({
         <head><meta charset='utf-8'><title>${fileName}</title></head>
         <body style="font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #111827; padding: 20px;">
           ${editorSections
-            .map(
-              (sec) =>
-                `<h2 style="color: #4f46e5; border-bottom: 2px solid #6366f1; padding-bottom: 4px; margin-top: 18px; margin-bottom: 8px;">${sec.title}</h2><p style="white-space: pre-wrap; margin-bottom: 12px;">${sec.content}</p>`
-            )
-            .join("")}
+          .map(
+            (sec) =>
+              `<h2 style="color: #4f46e5; border-bottom: 2px solid #6366f1; padding-bottom: 4px; margin-top: 18px; margin-bottom: 8px;">${sec.title}</h2><p style="white-space: pre-wrap; margin-bottom: 12px;">${sec.content}</p>`
+          )
+          .join("")}
         </body>
         </html>
       `;
@@ -517,12 +784,12 @@ export default function ResumeEditor({
           </head>
           <body>
             ${editorSections
-              .map((sec) =>
-                sec.isHeader
-                  ? `<h1>${sec.title}</h1><div class="sub-header">${sec.content}</div>`
-                  : `<div class="section-title">${sec.title}</div><div class="section-content">${sec.content}</div>`
-              )
-              .join("")}
+            .map((sec) =>
+              sec.isHeader
+                ? `<h1>${sec.title}</h1><div class="sub-header">${sec.content}</div>`
+                : `<div class="section-title">${sec.title}</div><div class="section-content">${sec.content}</div>`
+            )
+            .join("")}
             <script>
               window.onload = function() { window.print(); }
             </script>
@@ -609,7 +876,27 @@ export default function ResumeEditor({
           <button
             className="btn-primary"
             style={{ padding: "9px 18px", fontSize: 13 }}
-            onClick={() => handleNav("ats-analysis")}
+            onClick={() => {
+              try {
+                let userId = "";
+                const userRaw = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+                if (userRaw) {
+                  const u = JSON.parse(userRaw);
+                  userId = u?.id || u?._id || "";
+                }
+                const fullText = editorSections
+                  .map((sec) => `${sec.title.toUpperCase()}\n${sec.content}`)
+                  .join("\n\n");
+                if (userId) {
+                  localStorage.setItem(`jobprep_final_resume_sections_${userId}`, JSON.stringify(editorSections));
+                  localStorage.setItem(`jobprep_final_resume_text_${userId}`, fullText);
+                }
+                localStorage.setItem("jobprep_final_resume_sections", JSON.stringify(editorSections));
+                localStorage.setItem("jobprep_final_resume_text", fullText);
+                localStorage.setItem("jobprep_needs_ats_scan", "true");
+              } catch { }
+              handleNav("ats-analysis");
+            }}
           >
             Step 4: Check ATS Score →
           </button>
@@ -855,7 +1142,7 @@ export default function ResumeEditor({
             alignItems: "stretch",
           }}
         >
-          {/* LEFT — AI Suggestions tailored to the real resume */}
+          {/* LEFT — AI Suggestions & Smart Refactor */}
           <div
             className="custom-scrollbar analysis-col"
             style={{
@@ -868,6 +1155,96 @@ export default function ResumeEditor({
               maxHeight: "calc(100vh - 170px)",
             }}
           >
+            {/* Sticky Header with Title & Sync AI Resume Button */}
+            <div
+              style={{
+                position: "sticky",
+                top: 0,
+                zIndex: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 8,
+                padding: "10px 14px",
+                background: "rgba(10, 10, 30, 0.95)",
+                backdropFilter: "blur(16px)",
+                borderRadius: 14,
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "7px 14px",
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    border: "1px solid rgba(124, 58, 237, 0.55)",
+                    background:
+                      "linear-gradient(135deg, rgba(124, 58, 237, 0.35), rgba(6, 182, 212, 0.2))",
+                    color: "#fff",
+                  }}
+                >
+                  <span>✨ AI Suggestions</span>
+                  {pendingSuggestionsCount > 0 ? (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        padding: "1px 7px",
+                        borderRadius: 10,
+                        background: "linear-gradient(135deg, #10b981, #059669)",
+                        color: "#fff",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {pendingSuggestionsCount} pending
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        padding: "1px 7px",
+                        borderRadius: 10,
+                        background: "rgba(255, 255, 255, 0.08)",
+                        color: "rgba(226, 232, 240, 0.65)",
+                      }}
+                    >
+                      {suggestions.length}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleResetToAiAnalysis}
+                title="Revert all manual edits to the original AI analysis"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  padding: "6px 12px",
+                  borderRadius: 8,
+                  fontSize: 11,
+                  fontFamily: "JetBrains Mono",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  background: "rgba(255, 255, 255, 0.04)",
+                  color: "rgba(226, 232, 240, 0.8)",
+                  transition: "all 0.2s",
+                }}
+              >
+                <span>🔄</span>
+                <span>Sync AI Resume</span>
+              </button>
+            </div>
+
+            {/* AI Suggestions List */}
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {suggestions.length === 0 ? (
                 <div
@@ -884,16 +1261,16 @@ export default function ResumeEditor({
                   const statusStyle =
                     s.status === "accepted"
                       ? {
-                          borderColor: "rgba(16,185,129,0.35)",
-                          background: "rgba(16,185,129,0.05)",
-                        }
+                        borderColor: "rgba(16,185,129,0.35)",
+                        background: "rgba(16,185,129,0.05)",
+                      }
                       : s.status === "rejected"
-                      ? {
+                        ? {
                           borderColor: "rgba(239,68,68,0.25)",
                           background: "rgba(239,68,68,0.04)",
                           opacity: 0.65,
                         }
-                      : {};
+                        : {};
 
                   return (
                     <LockedBlurOverlay
@@ -925,13 +1302,12 @@ export default function ResumeEditor({
                               {s.section}
                             </span>
                             <span
-                              className={`tag ${
-                                s.impact === "high"
-                                  ? "tag-green"
-                                  : s.impact === "medium"
+                              className={`tag ${s.impact === "high"
+                                ? "tag-green"
+                                : s.impact === "medium"
                                   ? "tag-amber"
                                   : "tag-cyan"
-                              }`}
+                                }`}
                               style={{ padding: "4px 10px", fontSize: 11 }}
                             >
                               {s.impact} impact
@@ -941,14 +1317,32 @@ export default function ResumeEditor({
                             </span>
                           </div>
                           {s.status !== "pending" && (
-                            <span
-                              className={`tag ${s.status === "accepted" ? "tag-green" : "tag-red"}`}
-                              style={{ padding: "4px 10px", fontSize: 11 }}
-                            >
-                              {s.status === "accepted"
-                                ? "✓ Accepted & Applied to Resume"
-                                : "✗ Rejected"}
-                            </span>
+                            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                              <span
+                                className={`tag ${s.status === "accepted" ? "tag-green" : "tag-red"}`}
+                                style={{ padding: "4px 10px", fontSize: 11 }}
+                              >
+                                {s.status === "accepted"
+                                  ? "✓ Applied to Resume"
+                                  : "✗ Rejected"}
+                              </span>
+                              <button
+                                type="button"
+                                className="btn-ghost"
+                                style={{
+                                  padding: "3px 8px",
+                                  fontSize: 11,
+                                  borderColor: "rgba(239, 68, 68, 0.4)",
+                                  color: "#fca5a5",
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                }}
+                                onClick={() => updateStatus(s.id, "pending")}
+                                title="Undo and revert this suggestion"
+                              >
+                                ↩ Undo
+                              </button>
+                            </div>
                           )}
                         </div>
 
@@ -1037,7 +1431,7 @@ export default function ResumeEditor({
                                   style={{ padding: "7px 16px", fontSize: 13 }}
                                   onClick={() => saveEdit(s.id)}
                                 >
-                                  Save Edit &amp; Accept
+                                  Save Edit &amp; Apply
                                 </button>
                                 <button
                                   type="button"
@@ -1060,7 +1454,7 @@ export default function ResumeEditor({
                                   }}
                                   onClick={() => updateStatus(s.id, "accepted")}
                                 >
-                                  ✓ Accept
+                                  ✓ Apply
                                 </button>
                                 <button
                                   type="button"
@@ -1105,7 +1499,7 @@ export default function ResumeEditor({
             </div>
           </div>
 
-          {/* RIGHT — Real Resume Preview (50% width) */}
+          {/* RIGHT — Real Resume Preview with Interactive Editor Icons */}
           <div
             className="glass resume-preview-card analysis-col"
             style={{
@@ -1150,18 +1544,18 @@ export default function ResumeEditor({
                 </div>
               </div>
               <span
-                className="tag tag-green"
+                className="tag tag-purple"
                 style={{
                   position: "absolute",
                   right: 20,
                   fontSize: 10,
                   cursor: "default",
-                  padding: "4px 8px",
                 }}
               >
-                ✓ Live Updated
+                ✎ Click text to edit
               </span>
             </div>
+
             <div
               className="resume-preview-body custom-scrollbar"
               style={{
@@ -1176,7 +1570,7 @@ export default function ResumeEditor({
                   {section.isHeader ? (
                     <div
                       style={{
-                        marginBottom: 12,
+                        marginBottom: 14,
                         paddingBottom: 10,
                         borderBottom: "1px solid rgba(255,255,255,0.1)",
                       }}
@@ -1193,12 +1587,19 @@ export default function ResumeEditor({
                             next[i] = { ...next[i], title: val };
                             return next;
                           });
+                          setBaseSections((prev) => {
+                            const next = [...prev];
+                            next[i] = { ...next[i], title: val };
+                            return next;
+                          });
                         }}
                         style={{
-                          fontSize: 17,
+                          fontSize: 16,
                           fontWeight: 800,
                           color: "white",
                           marginBottom: 4,
+                          outline: "none",
+                          cursor: "text",
                         }}
                       >
                         {section.title}
@@ -1210,8 +1611,10 @@ export default function ResumeEditor({
                         onBlur={(e) => handleSectionContentChange(i, e.currentTarget.innerText)}
                         style={{
                           fontSize: 11,
-                          color: "rgba(148,163,184,0.7)",
+                          color: "rgba(148,163,184,0.6)",
                           lineHeight: 1.6,
+                          outline: "none",
+                          cursor: "text",
                         }}
                       >
                         {section.content}
@@ -1219,30 +1622,160 @@ export default function ResumeEditor({
                     </div>
                   ) : (
                     <div>
+                      {/* Section Header: Title on Left, Uploaded Buttons on Right */}
                       <div
-                        className="editable-text"
-                        contentEditable
-                        suppressContentEditableWarning
-                        onBlur={(e) => {
-                          const val = e.currentTarget.innerText;
-                          setEditorSections((prev) => {
-                            const next = [...prev];
-                            next[i] = { ...next[i], title: val };
-                            return next;
-                          });
-                        }}
                         style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: "rgba(124,58,237,0.85)",
-                          letterSpacing: "0.08em",
-                          textTransform: "uppercase",
-                          marginBottom: 5,
-                          fontFamily: "JetBrains Mono",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          marginBottom: 6,
+                          gap: 8,
                         }}
                       >
-                        {section.title}
+                        <div
+                          className="editable-text"
+                          contentEditable
+                          suppressContentEditableWarning
+                          onBlur={(e) => {
+                            const val = e.currentTarget.innerText;
+                            setEditorSections((prev) => {
+                              const next = [...prev];
+                              next[i] = { ...next[i], title: val };
+                              return next;
+                            });
+                            setBaseSections((prev) => {
+                              const next = [...prev];
+                              next[i] = { ...next[i], title: val };
+                              return next;
+                            });
+                          }}
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: "rgba(124,58,237,0.85)",
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            fontFamily: "JetBrains Mono",
+                            outline: "none",
+                            cursor: "text",
+                          }}
+                        >
+                          {section.title}
+                        </div>
+
+                        {/* Uploaded Buttons: Up, Down, Remove */}
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                          <button
+                            type="button"
+                            title="Move Section Up"
+                            disabled={i <= 1}
+                            onClick={() => handleMoveSection(i, "up")}
+                            style={{
+                              width: 26,
+                              height: 26,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              borderRadius: 6,
+                              fontSize: 12,
+                              border: "1px solid rgba(255, 255, 255, 0.12)",
+                              background: "rgba(255, 255, 255, 0.03)",
+                              color: i <= 1 ? "rgba(148, 163, 184, 0.2)" : "rgba(226, 232, 240, 0.8)",
+                              cursor: i <= 1 ? "not-allowed" : "pointer",
+                              transition: "all 0.15s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              if (i > 1) {
+                                e.currentTarget.style.background = "rgba(124, 58, 237, 0.25)";
+                                e.currentTarget.style.borderColor = "rgba(124, 58, 237, 0.55)";
+                                e.currentTarget.style.color = "#fff";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+                              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.12)";
+                              e.currentTarget.style.color =
+                                i <= 1 ? "rgba(148, 163, 184, 0.2)" : "rgba(226, 232, 240, 0.8)";
+                            }}
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            title="Move Section Down"
+                            disabled={i >= editorSections.length - 1}
+                            onClick={() => handleMoveSection(i, "down")}
+                            style={{
+                              width: 26,
+                              height: 26,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              borderRadius: 6,
+                              fontSize: 12,
+                              border: "1px solid rgba(255, 255, 255, 0.12)",
+                              background: "rgba(255, 255, 255, 0.03)",
+                              color:
+                                i >= editorSections.length - 1
+                                  ? "rgba(148, 163, 184, 0.2)"
+                                  : "rgba(226, 232, 240, 0.8)",
+                              cursor: i >= editorSections.length - 1 ? "not-allowed" : "pointer",
+                              transition: "all 0.15s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              if (i < editorSections.length - 1) {
+                                e.currentTarget.style.background = "rgba(124, 58, 237, 0.25)";
+                                e.currentTarget.style.borderColor = "rgba(124, 58, 237, 0.55)";
+                                e.currentTarget.style.color = "#fff";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+                              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.12)";
+                              e.currentTarget.style.color =
+                                i >= editorSections.length - 1
+                                  ? "rgba(148, 163, 184, 0.2)"
+                                  : "rgba(226, 232, 240, 0.8)";
+                            }}
+                          >
+                            ↓
+                          </button>
+                          <button
+                            type="button"
+                            title="Remove Section"
+                            onClick={() => {
+                              if (confirm(`Remove "${section.title}" section?`)) {
+                                handleRemoveSection(i);
+                              }
+                            }}
+                            style={{
+                              width: 26,
+                              height: 26,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              borderRadius: 6,
+                              fontSize: 12,
+                              border: "1px solid rgba(239, 68, 68, 0.35)",
+                              background: "rgba(239, 68, 68, 0.08)",
+                              color: "rgba(248, 113, 113, 0.95)",
+                              cursor: "pointer",
+                              transition: "all 0.15s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = "rgba(239, 68, 68, 0.25)";
+                              e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.65)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)";
+                              e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.35)";
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </div>
+
                       <div
                         className="editable-text"
                         contentEditable
@@ -1251,8 +1784,10 @@ export default function ResumeEditor({
                         style={{
                           fontSize: 12,
                           color: "rgba(226,232,240,0.85)",
-                          lineHeight: 1.7,
+                          lineHeight: 1.8,
                           whiteSpace: "pre-line",
+                          outline: "none",
+                          cursor: "text",
                         }}
                       >
                         {section.content}
@@ -1261,6 +1796,41 @@ export default function ResumeEditor({
                   )}
                 </div>
               ))}
+
+              {/* Bottom: Add New Resume Section Button */}
+              <button
+                type="button"
+                onClick={handleAddSection}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  padding: "12px 18px",
+                  borderRadius: 10,
+                  border: "1px dashed rgba(124, 58, 237, 0.45)",
+                  background: "rgba(124, 58, 237, 0.05)",
+                  color: "#c4b5fd",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  marginTop: 10,
+                  marginBottom: 16,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(124, 58, 237, 0.14)";
+                  e.currentTarget.style.borderColor = "rgba(124, 58, 237, 0.75)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(124, 58, 237, 0.05)";
+                  e.currentTarget.style.borderColor = "rgba(124, 58, 237, 0.45)";
+                }}
+              >
+                <span style={{ fontSize: 16 }}>+</span>
+                <span>Add New Resume Section</span>
+              </button>
             </div>
           </div>
         </div>

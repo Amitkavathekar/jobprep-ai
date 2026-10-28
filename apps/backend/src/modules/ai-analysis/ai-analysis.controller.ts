@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { analyzeJdAndResume, getLatestAnalysis } from "./ai-analysis.service";
 import { generateInterviewPrep } from "../Interview-Prep/interview-prep.service";
+import { logUserActivity } from "../users/user-activity.service";
 
 export async function analyzeController(
   req: Request,
@@ -37,9 +38,28 @@ export async function analyzeController(
 
     const result = await analyzeJdAndResume(file, jobDescription.trim(), userId);
 
+    try {
+      const fileName = file.originalname || "Resume";
+      const score = typeof result.score === "number" ? result.score : 0;
+      await logUserActivity(
+        userId,
+        "ai_analysis",
+        `AI Resume Analysis: ${fileName} (${score}% Match)`,
+        `Analyzed against target job requirements`,
+        { score, fileName }
+      );
+    } catch {}
+
     // Automatically generate tailored Interview Prep questions & answers during Step 2
     try {
       await generateInterviewPrep(userId);
+      await logUserActivity(
+        userId,
+        "interview_prep",
+        `Generated Tailored Interview Question Bank`,
+        `Curated domain-specific Q&As and personalized study plan`,
+        { role: (result as any).targetJobRole }
+      );
     } catch (prepErr) {
       console.warn("Interview prep generation warning during Step 2 validation:", prepErr);
     }

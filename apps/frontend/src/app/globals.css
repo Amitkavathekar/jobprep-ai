@@ -399,3 +399,46 @@
   }
 }
 
+.glass-input {
+  width: 100%;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  border-color: rgba(124, 58, 237, 0.7);
+  box-shadow: 0 0 12px rgba(124, 58, 237, 0.3);
+}
+
+.pulse-glow {
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.6);
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.85);
+  }
+}
+
+.page-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .mobile-hide {
+    display: none !important;
+  }
+}
+

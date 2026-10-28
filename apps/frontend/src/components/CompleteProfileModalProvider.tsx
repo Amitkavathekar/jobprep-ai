@@ -59,15 +59,24 @@ export default function CompleteProfileModalProvider() {
       const current = parseStoredUser();
       setProfile(current);
 
-      // Show if explicitly triggered on login
-      if (shouldShowFlag === "true") {
-        setIsOpen(true);
-        return;
-      }
+      const userKey = current.id || current.email;
 
-      // Or if logged in and profile is missing key details
-      if (current.email && !current.professional_title) {
-        setIsOpen(true);
+      // Only show if explicitly triggered on login and not already shown on first login
+      if (shouldShowFlag === "true") {
+        // Clear flag immediately so any page reload never triggers it
+        localStorage.removeItem("show_complete_profile_modal");
+
+        const alreadyShown = userKey
+          ? localStorage.getItem(`profile_modal_shown_${userKey}`) === "true"
+          : false;
+
+        // Show once on first-time login
+        if (!alreadyShown) {
+          if (userKey) {
+            localStorage.setItem(`profile_modal_shown_${userKey}`, "true");
+          }
+          setIsOpen(true);
+        }
       }
     } catch {}
   }, []);
@@ -97,6 +106,11 @@ export default function CompleteProfileModalProvider() {
 
   const handleClose = () => {
     try {
+      const current = parseStoredUser();
+      const userKey = current.id || current.email;
+      if (userKey) {
+        localStorage.setItem(`profile_modal_shown_${userKey}`, "true");
+      }
       localStorage.removeItem("show_complete_profile_modal");
     } catch {}
     setIsOpen(false);
@@ -106,6 +120,11 @@ export default function CompleteProfileModalProvider() {
     try {
       const raw = localStorage.getItem("user");
       const prev = raw ? JSON.parse(raw) : {};
+
+      const userKey = updated.id || prev.id || prev._id || updated.email || prev.email;
+      if (userKey) {
+        localStorage.setItem(`profile_modal_shown_${userKey}`, "true");
+      }
 
       const merged = {
         ...prev,

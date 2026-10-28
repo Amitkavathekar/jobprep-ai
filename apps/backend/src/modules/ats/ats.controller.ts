@@ -2,6 +2,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { analyzeResume } from "./ats.service";
 import { AtsAnalysesCombinedReport } from "../reports/ats-analysis-combined-report.model";
+import { logUserActivity } from "../users/user-activity.service";
 
 export async function analyzeResumeController(
   req: Request,
@@ -10,18 +11,20 @@ export async function analyzeResumeController(
 ): Promise<void> {
   try {
     const file = req.file;
+    const resumeText = (req.body.resumeText || req.body.content || req.body.text || "") as string;
 
-    if (!file) {
+    if (!file && (!resumeText || resumeText.trim().length < 15)) {
       res.status(400).json({
         success: false,
-        message: "Please upload a PDF or DOCX resume.",
+        message: "Please upload a resume file or provide resume text to analyze.",
       });
       return;
     }
 
     const analysis = await analyzeResume(
-      file,
+      file || resumeText.trim(),
       req.body.targetJobRole,
+      req.body.jobDescription,
     );
 
     let savedReportId: string | undefined = undefined;
@@ -43,6 +46,14 @@ export async function analyzeResumeController(
           raw_summary: analysis.summary,
         });
         savedReportId = saved._id.toString();
+
+        await logUserActivity(
+          userId,
+          "ats_scan",
+          `ATS Compatibility Scan: ${analysis.targetJobRole} (${analysis.score}/100)`,
+          `Evaluated ${analysis.targetJobRole} application with ${analysis.matchedSkills?.length || 0} matched skills`,
+          { score: analysis.score, role: analysis.targetJobRole }
+        );
       } catch (err) {
         console.error("Failed to persist ATS analysis report to history:", err);
       }

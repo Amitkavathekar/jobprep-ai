@@ -38,6 +38,7 @@ export interface AIAnalysisOutput {
     content: string;
     highlights?: string[];
   }>;
+  parsedResume?: any;
   resumeFileName: string;
   jobDescription?: string;
   createdAt: string;
@@ -669,6 +670,7 @@ export async function getLatestAnalysis(userId?: string): Promise<AIAnalysisOutp
     },
     gaps: Array.isArray(doc.gaps) ? doc.gaps : [],
     suggestions: Array.isArray(doc.suggestions) ? doc.suggestions : [],
+    parsedResume: doc.parsed_resume || null,
     resumeSections: sections,
     resumeFileName: doc.resume_file_name || "Resume_Analyzed.pdf",
     jobDescription: doc.job_description || "",
