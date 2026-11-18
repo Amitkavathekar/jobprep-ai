@@ -1,19 +1,20 @@
 import { Router } from "express";
-import { optionalAuthenticate } from "../../middlewares/auth.middleware";
 import {
   getTargetRoleController,
   chatWithAlexController,
   evaluateAnswerController,
   generateQuestionsController,
   generateScorecardController,
+  getMockInterviewsController,
 } from "./mock.controller";
 
 const router = Router();
 
-router.get("/target-role", optionalAuthenticate, getTargetRoleController);
-router.post("/chat", optionalAuthenticate, chatWithAlexController);
-router.post("/evaluate-answer", optionalAuthenticate, evaluateAnswerController);
-router.post("/generate-questions", optionalAuthenticate, generateQuestionsController);
-router.post("/scorecard", optionalAuthenticate, generateScorecardController);
+router.get("/",  getMockInterviewsController);
+router.get("/target-role", getTargetRoleController);
+router.post("/chat",  chatWithAlexController);
+router.post("/evaluate-answer", evaluateAnswerController);
+router.post("/generate-questions",  generateQuestionsController);
+router.post("/scorecard",  generateScorecardController);
 
 export default router;

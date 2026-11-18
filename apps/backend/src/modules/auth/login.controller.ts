@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { loginUser } from "./login.service";
 import { LoginUserInput } from "./login.types";
+import { HTTP_STATUS } from "@/constants/http-status";
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -8,7 +9,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
     const user = await loginUser(data);
 
-    return res.status(200).json({
+    return res.status(HTTP_STATUS.OK).json({
       message: "login successful",
       data: user,
     });

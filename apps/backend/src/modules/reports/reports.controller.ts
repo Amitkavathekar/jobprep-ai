@@ -7,6 +7,8 @@ import {
   getInterviewReportById,
   deleteReportById,
 } from "./reports.service";
+import { HTTP_STATUS } from "../../constants/http-status";
+
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -24,7 +26,7 @@ export async function getATSReportsController(
   try {
     const userId = req.user?.id;
     if (!userId) {
-      res.status(401).json({ success: false, message: "Unauthorized" });
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: "Unauthorized" });
       return;
     }
 
@@ -42,7 +44,7 @@ export async function getATSReportsController(
       minScore,
     });
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "ATS reports retrieved successfully.",
       data,
@@ -60,7 +62,7 @@ export async function getInterviewReportsController(
   try {
     const userId = req.user?.id;
     if (!userId) {
-      res.status(401).json({ success: false, message: "Unauthorized" });
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: "Unauthorized" });
       return;
     }
 
@@ -78,7 +80,7 @@ export async function getInterviewReportsController(
       minScore,
     });
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Interview reports retrieved successfully.",
       data,
@@ -96,13 +98,13 @@ export async function getReportStatsController(
   try {
     const userId = req.user?.id;
     if (!userId) {
-      res.status(401).json({ success: false, message: "Unauthorized" });
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: "Unauthorized" });
       return;
     }
 
     const stats = await getUserReportStats(userId);
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Report statistics retrieved successfully.",
       data: stats,
@@ -120,7 +122,7 @@ export async function getReportDetailsController(
   try {
     const userId = req.user?.id;
     if (!userId) {
-      res.status(401).json({ success: false, message: "Unauthorized" });
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: "Unauthorized" });
       return;
     }
 
@@ -138,11 +140,11 @@ export async function getReportDetailsController(
     }
 
     if (!report) {
-      res.status(404).json({ success: false, message: "Report not found." });
+      res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: "Report not found." });
       return;
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Report details retrieved successfully.",
       data: report,
@@ -160,7 +162,7 @@ export async function deleteReportController(
   try {
     const userId = req.user?.id;
     if (!userId) {
-      res.status(401).json({ success: false, message: "Unauthorized" });
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: "Unauthorized" });
       return;
     }
 
@@ -175,14 +177,14 @@ export async function deleteReportController(
     const deleted = await deleteReportById(userId, type, reportId);
 
     if (!deleted) {
-      res.status(404).json({
+      res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Report not found or not authorized to delete.",
       });
       return;
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Report deleted successfully.",
     });

@@ -3,6 +3,9 @@ import type { Request, Response, NextFunction } from "express";
 import { analyzeResume } from "./ats.service";
 import { AtsAnalysesCombinedReport } from "../reports/ats-analysis-combined-report.model";
 import { logUserActivity } from "../users/user-activity.service";
+import { HTTP_STATUS } from "../../constants/http-status";
+
+
 
 export async function analyzeResumeController(
   req: Request,
@@ -14,7 +17,7 @@ export async function analyzeResumeController(
     const resumeText = (req.body.resumeText || req.body.content || req.body.text || "") as string;
 
     if (!file && (!resumeText || resumeText.trim().length < 15)) {
-      res.status(400).json({
+      res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: "Please upload a resume file or provide resume text to analyze.",
       });
@@ -59,7 +62,7 @@ export async function analyzeResumeController(
       }
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Resume analyzed successfully.",
       data: {

@@ -1,7 +1,8 @@
 import { ApiError } from "./ApiError";
+import { HTTP_STATUS } from "../constants/http-status";
 
 export class UnauthorizedError extends ApiError {
   constructor(message: string = "Unauthorized") {
-    super(401, message);
+    super(HTTP_STATUS.UNAUTHORIZED, message);
   }
 }
