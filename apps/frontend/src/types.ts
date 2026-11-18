@@ -9,6 +9,17 @@ export type Screen =
   | "dashboard"
   | (string & {});
 
+export type AdminScreen =
+  | "admin-dashboard"
+  | "admin-membership"
+  | "admin-coupons"
+  | "admin-users"
+  | "admin-support"
+  | "admin-ai-models"
+  | "admin-notifications"
+  | "admin-activity-log"
+  | (string & {});
+
 export interface Coupon {
   id?: string;
   code: string;
@@ -33,4 +44,3 @@ export interface SupportTicket {
     email: string;
   };
 }
-

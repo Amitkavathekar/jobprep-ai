@@ -972,22 +972,38 @@ export default function MockInterview({
     setPhase("feedback");
 
     try {
+      const rawUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+      let currentUserId = "";
+      if (rawUser) {
+        try {
+          const u = JSON.parse(rawUser);
+          currentUserId = u?.id || u?._id || "";
+        } catch {}
+      }
+
       const res = await api.post("/mock-interview/scorecard", {
         interviewType: selectedType,
         difficulty,
         questions: activeQuestions.map((q) => ({ q: q.q, category: q.category })),
         answers: updatedAnswers,
         roleTitle: targetRoleInfo.jobTitle,
+        userId: currentUserId || undefined,
       });
 
       if (res.data?.success && res.data.data) {
         setScorecardData(res.data.data);
       }
+
+      if (currentUserId && typeof window !== "undefined") {
+        const cur = parseInt(localStorage.getItem(`jobprep_interview_count_${currentUserId}`) || "0", 10);
+        localStorage.setItem(`jobprep_interview_count_${currentUserId}`, String(cur + 1));
+        window.dispatchEvent(new Event("jobprep_interviews_updated"));
+        window.dispatchEvent(new Event("activity-updated"));
+      }
     } catch (err) {
       console.error("Scorecard evaluation error:", err);
     } finally {
       setIsEvaluatingScorecard(false);
-      onComplete?.();
     }
   };
 
@@ -1842,22 +1858,45 @@ export default function MockInterview({
                           >
                             You answered the 2 free practice questions! Upgrade your membership plan to unlock all {targetQuestionCount} questions, complete Groq AI feedback, and full score analysis.
                           </p>
-                          <button
-                            type="button"
-                            className="btn-primary"
-                            style={{
-                              padding: "10px 20px",
-                              fontSize: 13,
-                              fontWeight: 700,
-                              background:
-                                "linear-gradient(135deg, #7c3aed, #ec4899)",
-                              boxShadow: "0 4px 16px rgba(124, 58, 237, 0.5)",
-                              borderRadius: 10,
-                            }}
-                            onClick={onOpenUpgradeModal}
-                          >
+                          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                            <button
+                              type="button"
+                              className="btn-primary"
+                              style={{
+                                padding: "10px 20px",
+                                fontSize: 13,
+                                fontWeight: 700,
+                                background:
+                                  "linear-gradient(135deg, #7c3aed, #ec4899)",
+                                boxShadow: "0 4px 16px rgba(124, 58, 237, 0.5)",
+                                borderRadius: 10,
+                              }}
+                              onClick={onOpenUpgradeModal}
+                            >
                               ⚡ Unlock to Upgrade Plan →
-                          </button>
+                            </button>
+                            {userAnswers.length > 0 && (
+                              <button
+                                type="button"
+                                className="btn-ghost"
+                                style={{
+                                  padding: "10px 18px",
+                                  fontSize: 13,
+                                  fontWeight: 600,
+                                  borderRadius: 10,
+                                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                                  background: "rgba(255, 255, 255, 0.05)",
+                                  color: "#f1f5f9",
+                                  cursor: "pointer",
+                                }}
+                                onClick={() => {
+                                  handleFinishRoundAndScorecard(userAnswers);
+                                }}
+                              >
+                                📊 Finish & View Scorecard ({userAnswers.length} Questions) →
+                              </button>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>

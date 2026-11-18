@@ -1,7 +1,15 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import ForgotPassword from "@/components/common/ForgotPassword";
+
 export default function ForgotPasswordPage() {
+  const router = useRouter();
+
   return (
-    <main>
-      <h1>Forgot password</h1>
-    </main>
-  )
+    <ForgotPassword
+      onBackToLogin={() => router.push("/login")}
+      onBackToLanding={() => router.push("/")}
+    />
+  );
 }
