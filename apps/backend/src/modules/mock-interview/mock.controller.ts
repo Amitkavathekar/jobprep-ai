@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import { Types } from "mongoose";
 import {
   getMockInterviewTargetRole,
   chatWithAlex,
@@ -7,6 +8,10 @@ import {
   generateMockScorecardWithGroq,
 } from "./mock.service";
 import { logUserActivity } from "../users/user-activity.service";
+import { MockInterviewsReport } from "../reports/mock-interview-report.model";
+import { UserActivity } from "../users/user-activity.model";
+import { HTTP_STATUS } from "../../constants/http-status";
+
 
 export async function getTargetRoleController(
   req: Request,
@@ -31,12 +36,12 @@ export async function chatWithAlexController(
   try {
     const { message, history, targetRole, category } = req.body;
     if (!message || typeof message !== "string") {
-      res.status(400).json({ success: false, message: "A message string is required." });
+      res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: "A message string is required." });
       return;
     }
 
     const data = await chatWithAlex({ message, history, targetRole, category });
-    res.status(200).json({ success: true, data });
+    res.status(HTTP_STATUS.OK).json({ success: true, data });
   } catch (error) {
     next(error);
   }
@@ -51,7 +56,7 @@ export async function evaluateAnswerController(
     const userId = (req as any).user?.id || (req as any).user?._id;
     const { question, category, hint, answer, difficulty, roleTitle } = req.body;
     if (!question) {
-      res.status(400).json({ success: false, message: "Question is required." });
+      res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: "Question is required." });
       return;
     }
 
@@ -65,7 +70,7 @@ export async function evaluateAnswerController(
       roleTitle,
     });
 
-    res.status(200).json({ success: true, data });
+    res.status(HTTP_STATUS.OK).json({ success: true, data });
   } catch (error) {
     next(error);
   }
@@ -92,11 +97,11 @@ export async function generateQuestionsController(
     });
 
     if (!result.success) {
-      res.status(400).json(result);
+      res.status(HTTP_STATUS.BAD_REQUEST).json(result);
       return;
     }
 
-    res.status(200).json(result);
+    res.status(HTTP_STATUS.OK).json(result);
   } catch (error) {
     next(error);
   }
@@ -108,7 +113,11 @@ export async function generateScorecardController(
   next: NextFunction
 ): Promise<void> {
   try {
-    const userId = (req as any).user?.id || (req as any).user?._id;
+    const userId =
+      (req as any).user?.id ||
+      (req as any).user?._id ||
+      req.body?.userId ||
+      req.body?.user_id;
     const { interviewType, difficulty, questions, answers, roleTitle } = req.body;
 
     const data = await generateMockScorecardWithGroq({
@@ -133,7 +142,47 @@ export async function generateScorecardController(
       } catch {}
     }
 
-    res.status(200).json({ success: true, data });
+    res.status(HTTP_STATUS.OK).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getMockInterviewsController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId =
+      (req as any).user?.id ||
+      (req as any).user?._id ||
+      (req.query?.userId as string) ||
+      (req.query?.user_id as string);
+
+    if (!userId || !Types.ObjectId.isValid(userId)) {
+      res.status(HTTP_STATUS.OK).json({ success: true, data: [], count: 0 });
+      return;
+    }
+
+    const userObjectId = new Types.ObjectId(userId);
+    const [reports, activitiesCount] = await Promise.all([
+      MockInterviewsReport.find({ user_id: userObjectId })
+        .sort({ created_at: -1, createdAt: -1 })
+        .lean(),
+      UserActivity.countDocuments({
+        user_id: userObjectId,
+        type: "mock_interview",
+      }),
+    ]);
+
+    const count = Math.max(reports.length, activitiesCount);
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      data: reports,
+      count,
+    });
   } catch (error) {
     next(error);
   }

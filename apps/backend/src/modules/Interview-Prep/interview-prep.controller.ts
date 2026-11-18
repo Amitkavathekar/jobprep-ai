@@ -3,6 +3,8 @@ import {
   getExistingInterviewPrep,
   generateInterviewPrep,
 } from "./interview-prep.service";
+import { HTTP_STATUS } from "../../constants/http-status";
+
 
 export async function getInterviewPrepController(
   req: Request,
@@ -12,7 +14,7 @@ export async function getInterviewPrepController(
   try {
     const userId = (req as any).user?.id;
     if (!userId) {
-      res.status(401).json({
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Authentication required to view interview preparation.",
       });
@@ -22,7 +24,7 @@ export async function getInterviewPrepController(
     const data = await getExistingInterviewPrep(userId);
 
     if (!data) {
-      res.status(404).json({
+      res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         notGenerated: true,
         message:
@@ -31,7 +33,7 @@ export async function getInterviewPrepController(
       return;
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Interview preparation question bank retrieved successfully.",
       data,
@@ -49,7 +51,7 @@ export async function regenerateInterviewPrepController(
   try {
     const userId = (req as any).user?.id;
     if (!userId) {
-      res.status(401).json({
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Authentication required to regenerate interview preparation.",
       });
@@ -59,14 +61,14 @@ export async function regenerateInterviewPrepController(
     const data = await generateInterviewPrep(userId);
 
     if (!data) {
-      res.status(400).json({
+      res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: "Failed to generate interview preparation questions. Ensure a valid JD is uploaded.",
       });
       return;
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Interview preparation questions regenerated and saved successfully.",
       data,

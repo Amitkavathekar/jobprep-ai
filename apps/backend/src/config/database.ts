@@ -2,11 +2,9 @@ import mongoose from 'mongoose';
 
 async function connectDb() {
   try {
-    const mongoUri =
-      process.env.MONGODB_URI ||
-      'mongodb://amit:NHOctORoHnITUbIw@ac-gzog6ib-shard-00-00.uujmrd6.mongodb.net:27017,ac-gzog6ib-shard-00-01.uujmrd6.mongodb.net:27017,ac-gzog6ib-shard-00-02.uujmrd6.mongodb.net:27017/?ssl=true&replicaSet=atlas-lvwapq-shard-0&authSource=admin';
-    const databaseName = mongoUri.match(/^mongodb(?:\+srv)?:\/\/[^/]+\/([^?]*)/)?.[1];
-    const dbName = databaseName || 'jobprep-ai';
+    const mongoUri = process.env.MONGODB_URI ;
+      
+    const dbName =  'jobprep-ai';
     await mongoose.connect(mongoUri, { dbName });
     console.log('Connected to MongoDB database');
 

@@ -3,6 +3,7 @@ import registerRoutes from "./register.routes";
 import loginRoutes from "./login.routes";
 import adminRoutes from "./admin.routes";
 import oauthRoutes from "./oauth.routes";
+import forgotPasswordRoutes from "./forgot-password.routes";
 
 const router = Router();
 
@@ -11,6 +12,10 @@ router.use(registerRoutes);
 
 // POST /api/auth/login
 router.use(loginRoutes);
+
+
+// POST /api/auth/forgot-password, /api/auth/forgot-password/send-otp, etc.
+router.use(forgotPasswordRoutes);
 
 // GET /api/auth/google, /api/auth/github, /api/auth/linkedin
 router.use(oauthRoutes);

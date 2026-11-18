@@ -9,6 +9,8 @@ import {
   duplicateResume,
   uploadAndCreateResume,
 } from "./resume.service";
+import { HTTP_STATUS } from "../../constants/http-status";
+
 
 export async function listResumesController(
   req: Request,
@@ -18,7 +20,7 @@ export async function listResumesController(
   try {
     const userId = (req as any).user?.id;
     if (!userId) {
-      res.status(401).json({
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Authentication required to view resumes",
       });
@@ -28,7 +30,7 @@ export async function listResumesController(
     const search = typeof req.query.search === "string" ? req.query.search : undefined;
     const resumes = await getUserResumes(userId, { search });
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       count: resumes.length,
       data: resumes,
@@ -46,7 +48,7 @@ export async function getResumeByIdController(
   try {
     const userId = (req as any).user?.id;
     if (!userId) {
-      res.status(401).json({
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Authentication required to view resume",
       });
@@ -57,14 +59,14 @@ export async function getResumeByIdController(
     const resume = await getResumeById(userId, id);
 
     if (!resume) {
-      res.status(404).json({
+      res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Resume not found or access denied",
       });
       return;
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       data: resume,
     });
@@ -81,7 +83,7 @@ export async function createResumeController(
   try {
     const userId = (req as any).user?.id;
     if (!userId) {
-      res.status(401).json({
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Authentication required to create resume",
       });
@@ -90,7 +92,7 @@ export async function createResumeController(
 
     const resume = await createResume(userId, req.body);
 
-    res.status(201).json({
+    res.status(HTTP_STATUS.CREATED).json({
       success: true,
       message: "Resume created successfully",
       data: resume,
@@ -108,7 +110,7 @@ export async function updateResumeController(
   try {
     const userId = (req as any).user?.id;
     if (!userId) {
-      res.status(401).json({
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Authentication required to update resume",
       });
@@ -126,7 +128,7 @@ export async function updateResumeController(
       return;
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.UNAUTHORIZED).json({
       success: true,
       message: "Resume updated successfully",
       data: updated,
@@ -144,7 +146,7 @@ export async function deleteResumeController(
   try {
     const userId = (req as any).user?.id;
     if (!userId) {
-      res.status(401).json({
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Authentication required to delete resume",
       });
@@ -155,14 +157,14 @@ export async function deleteResumeController(
     const deleted = await deleteResume(userId, id);
 
     if (!deleted) {
-      res.status(404).json({
+      res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Resume not found or access denied",
       });
       return;
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Resume deleted successfully",
     });
@@ -179,7 +181,7 @@ export async function togglePinResumeController(
   try {
     const userId = (req as any).user?.id;
     if (!userId) {
-      res.status(401).json({
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Authentication required",
       });
@@ -190,14 +192,14 @@ export async function togglePinResumeController(
     const updated = await togglePinResume(userId, id);
 
     if (!updated) {
-      res.status(404).json({
+      res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Resume not found or access denied",
       });
       return;
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Resume pin status updated",
       data: updated,
@@ -226,14 +228,14 @@ export async function duplicateResumeController(
     const newResume = await duplicateResume(userId, id);
 
     if (!newResume) {
-      res.status(404).json({
+      res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "Resume not found or access denied",
       });
       return;
     }
 
-    res.status(201).json({
+    res.status(HTTP_STATUS.CREATED).json({
       success: true,
       message: "Resume duplicated successfully",
       data: newResume,
@@ -251,7 +253,7 @@ export async function uploadResumeController(
   try {
     const userId = (req as any).user?.id;
     if (!userId) {
-      res.status(401).json({
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: "Authentication required to upload resume",
       });
@@ -260,7 +262,7 @@ export async function uploadResumeController(
 
     const file = req.file;
     if (!file) {
-      res.status(400).json({
+      res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: "Please upload a valid PDF, DOCX, or TXT file",
       });
@@ -272,7 +274,7 @@ export async function uploadResumeController(
       jobTitle: req.body.jobTitle,
     });
 
-    res.status(201).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       message: "Resume uploaded and saved successfully",
       data: resume,

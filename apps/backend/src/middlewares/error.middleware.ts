@@ -1,14 +1,14 @@
-import { Request, Response, NextFunction } from "express";
+import { Response } from "express";
 import { ApiError } from "../errors/ApiError";
+import { HTTP_STATUS } from "../constants/http-status";
+
 
 export const errorHandler = (
   err: any,
-  req: Request,
   res: Response,
-  next: NextFunction
 ) => {
   if (err instanceof SyntaxError && "body" in err) {
-    return res.status(400).json({
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
       status: "error",
       message: "Invalid JSON format in request body. Please check quotes, commas, and formatting.",
     });
@@ -21,7 +21,7 @@ export const errorHandler = (
     });
   }
 
-  return res.status(500).json({
+  return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
     status: "error",
     message: err.message || "Internal Server Error",
   });

@@ -181,7 +181,6 @@ export function RecentActivity() {
         >
           Recent Activity
         </h2>
-        <span className="font-mono text-[10px] text-slate-500">Live MongoDB</span>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1 custom-scrollbar">

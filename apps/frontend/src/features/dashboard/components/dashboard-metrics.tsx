@@ -46,14 +46,60 @@ export function DashboardMetrics() {
         })
         .catch(() => {})
 
-      // 3. Fetch user mock interview count
-      api.get("/mock-interview")
-        .then((res) => {
-          if (res.data?.success && Array.isArray(res.data.data)) {
-            setInterviewsCount(res.data.data.length)
+      // 3. Fetch user mock interview count from backend & local storage
+      const fetchInterviewsCount = async () => {
+        try {
+          const storedCount = localStorage.getItem(`jobprep_interview_count_${userId}`)
+          if (storedCount !== null && !isNaN(parseInt(storedCount, 10))) {
+            setInterviewsCount(parseInt(storedCount, 10))
           }
-        })
-        .catch(() => {})
+
+          // A. Check dedicated mock interview endpoint
+          try {
+            const mockRes = await api.get(`/mock-interview?userId=${userId}`)
+            if (mockRes.data?.success) {
+              const count =
+                typeof mockRes.data.count === "number"
+                  ? mockRes.data.count
+                  : Array.isArray(mockRes.data.data)
+                  ? mockRes.data.data.length
+                  : 0
+              setInterviewsCount(count)
+              localStorage.setItem(`jobprep_interview_count_${userId}`, String(count))
+              return
+            }
+          } catch {}
+
+          // B. Check reports statistics endpoint
+          try {
+            const statsRes = await api.get("/reports/stats")
+            if (statsRes.data?.success && typeof statsRes.data.data?.totalInterviews === "number") {
+              const count = statsRes.data.data.totalInterviews
+              setInterviewsCount(count)
+              localStorage.setItem(`jobprep_interview_count_${userId}`, String(count))
+              return
+            }
+          } catch {}
+
+          // C. Fallback to reports interviews list
+          try {
+            const repRes = await api.get("/reports/interviews?limit=1")
+            if (repRes.data?.success) {
+              const count =
+                typeof repRes.data.data?.pagination?.total === "number"
+                  ? repRes.data.data.pagination.total
+                  : Array.isArray(repRes.data.data?.items)
+                  ? repRes.data.data.items.length
+                  : 0
+              setInterviewsCount(count)
+              localStorage.setItem(`jobprep_interview_count_${userId}`, String(count))
+            }
+          } catch {}
+        } catch (e) {
+          console.error("Failed to fetch interview count:", e)
+        }
+      }
+      fetchInterviewsCount()
 
       // 4. Fetch user resumes count directly from database
       const fetchResumesCount = () => {
@@ -68,8 +114,10 @@ export function DashboardMetrics() {
       fetchResumesCount()
 
       window.addEventListener("jobprep_resumes_updated", fetchResumesCount)
+      window.addEventListener("jobprep_interviews_updated", fetchInterviewsCount)
       return () => {
         window.removeEventListener("jobprep_resumes_updated", fetchResumesCount)
+        window.removeEventListener("jobprep_interviews_updated", fetchInterviewsCount)
       }
     } catch (e) {
       console.error(e)
@@ -87,7 +135,7 @@ export function DashboardMetrics() {
     {
       label: "Interviews Completed",
       value: String(interviewsCount),
-      description: interviewsCount > 0 ? `${interviewsCount} completed` : "No interviews yet",
+      description: interviewsCount > 0 ? (interviewsCount === 1 ? "1 completed interview" : `${interviewsCount} completed interviews`) : "No interviews yet",
       color: "text-emerald-400",
     },
     {

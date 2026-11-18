@@ -381,8 +381,7 @@ Do NOT include markdown fences around the JSON. Respond with pure JSON.`;
   // Models to attempt: primary model first, fallback to versatile models if rate limit 429 occurs
   const candidateModels = [
     ACTIVE_GROQ_MODEL,
-    "llama-3.3-70b-versatile",
-    "openai/gpt-oss-20b",
+    "openai/gpt-oss-120b",
   ].filter((m, idx, arr) => arr.indexOf(m) === idx);
 
   let lastError: any = null;

@@ -9,3 +9,4 @@ export class ApiResponse<T = any> {
     this.success = statusCode < 400;
   }
 }
+ 
