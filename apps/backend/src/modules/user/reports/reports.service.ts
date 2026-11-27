@@ -1,6 +1,12 @@
 import { Types } from "mongoose";
-import { AtsAnalysesCombinedReport } from "./ats-analysis-combined-report.model";
-import { MockInterviewsReport } from "./mock-interview-report.model";
+import {
+  AtsAnalysesCombinedReport,
+  IAtsAnalysesCombinedReport,
+} from "./ats-analysis-combined-report.model";
+import {
+  MockInterviewsReport,
+  IMockInterviewsReport,
+} from "./mock-interview-report.model";
 
 export interface PaginationOptions {
   page?: number;
@@ -114,8 +120,11 @@ export async function getUserReportStats(userId: string) {
   const avgMatchScore =
     totalScans > 0
       ? Math.round(
-          atsReports.reduce((acc, curr) => acc + (curr.overall_match_score || 0), 0) /
-            totalScans
+          atsReports.reduce(
+            (acc: number, curr: Pick<IAtsAnalysesCombinedReport, "overall_match_score">) =>
+              acc + (curr.overall_match_score || 0),
+            0
+          ) / totalScans
         )
       : 0;
 
@@ -123,8 +132,11 @@ export async function getUserReportStats(userId: string) {
   const avgInterviewScore =
     totalInterviews > 0
       ? Math.round(
-          interviewReports.reduce((acc, curr) => acc + (curr.score || 0), 0) /
-            totalInterviews
+          interviewReports.reduce(
+            (acc: number, curr: Pick<IMockInterviewsReport, "score">) =>
+              acc + (curr.score || 0),
+            0
+          ) / totalInterviews
         )
       : 0;
 
