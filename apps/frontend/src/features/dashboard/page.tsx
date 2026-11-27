@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useSyncExternalStore } from "react"
+import { fetchCurrentUserApi } from "@/services/userService"
 
 import { DashboardMetrics } from "./components/dashboard-metrics"
 import { DashboardHeader } from "./components/dashboard-header"
@@ -10,7 +11,11 @@ import type { DashboardUser } from "./types"
 
 function subscribeToUserChanges(onChange: () => void) {
   window.addEventListener("storage", onChange)
-  return () => window.removeEventListener("storage", onChange)
+  window.addEventListener("user-profile-updated", onChange)
+  return () => {
+    window.removeEventListener("storage", onChange)
+    window.removeEventListener("user-profile-updated", onChange)
+  }
 }
 
 function getStoredUser() {
@@ -34,15 +39,20 @@ function getDashboardUser(value: unknown): DashboardUser | null {
   if (!isRecord(value)) return null
 
   return {
-    fullName: optionalString(value.fullName),
+    fullName: optionalString(value.fullName || value.full_name),
     email: optionalString(value.email),
     role: optionalString(value.role),
-    professionalTitle: optionalString(value.professionalTitle),
+    professionalTitle: optionalString(value.professionalTitle || value.professional_title),
+    avatarUrl: optionalString(value.avatarUrl || value.avatar_url),
     createdAt: optionalString(value.createdAt),
   }
 }
 
 export default function DashboardPage() {
+  useEffect(() => {
+    fetchCurrentUserApi().catch(() => {})
+  }, [])
+
   const storedUser = useSyncExternalStore(
     subscribeToUserChanges,
     getStoredUser,

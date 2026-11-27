@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 async function connectDb() {
   try {
-    const mongoUri = process.env.MONGODB_URI ;
+    const mongoUri = process.env.MONGODB_URI || '';
       
     const dbName =  'jobprep-ai';
     await mongoose.connect(mongoUri, { dbName });

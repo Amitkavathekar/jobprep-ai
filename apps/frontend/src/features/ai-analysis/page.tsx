@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { FileText, Loader2 } from "lucide-react";
 import api from "@/lib/axios";
 import { Screen, AIAnalysisProps, ResumeSection, AnalysisData } from "./types";
-import LockedBlurOverlay from "./components/LockedBlurOverlay";
+import LockedBlurOverlay from "@/components/LockedBlurOverlay";
 import UserMembershipModal from "@/components/UserMembershipModal";
 import { defaultPlans, PlanData } from "@/components/admin/PlanModal";
+import { LoadingSpinner } from "@/components/common";
 
 export default function AIAnalysis({
   onNavigate,
@@ -485,10 +486,12 @@ export default function AIAnalysis({
 
   if (loading || !analysisData) {
     return (
-      <div className="flex h-full min-h-[450px] flex-col items-center justify-center gap-3 text-slate-300">
-        <Loader2 className="size-8 animate-spin text-violet-400" />
-        <p className="text-sm font-medium">Loading AI Analysis...</p>
-      </div>
+      <LoadingSpinner
+        size={32}
+        text="Loading AI Analysis..."
+        minHeight={450}
+        className="text-slate-300"
+      />
     );
   }
 

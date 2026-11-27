@@ -31,25 +31,20 @@ export interface Recommendation {
   fix: string;
 }
 
-const ACTION_VERBS = [
-  "built", "developed", "designed", "implemented", "optimized", "engineered",
-  "deployed", "created", "led", "managed", "enhanced", "resolved", "architected",
-  "integrated", "automated", "tested", "delivered", "collaborated", "spearheaded",
-  "scaled", "maintained", "refactored", "analyzed", "orchestrated", "executed"
-];
+// Dynamic ATS keyword rules fetched from MongoDB database
+let DYNAMIC_ACTION_VERBS: string[] = [];
+let DYNAMIC_SOFT_SKILLS: string[] = [];
+let DYNAMIC_INDUSTRY_TERMS: string[] = [];
 
-const SOFT_SKILLS = [
-  "leadership", "communication", "teamwork", "problem solving", "collaboration",
-  "adaptability", "critical thinking", "ownership", "agile", "scrum", "mentoring",
-  "time management", "decision making", "presentation", "analytical", "creativity"
-];
-
-const INDUSTRY_TERMS = [
-  "api", "rest", "restful", "ci/cd", "git", "github", "database", "sql", "nosql",
-  "cloud", "docker", "microservices", "testing", "unit testing", "responsive",
-  "performance", "security", "scalability", "full stack", "frontend", "backend",
-  "mvc", "component", "state management", "production", "cross-platform"
-];
+if (typeof window !== "undefined") {
+  api.get("/admin/ats-config").then((res) => {
+    if (res.data?.success && res.data.data) {
+      DYNAMIC_ACTION_VERBS = res.data.data.actionVerbs || [];
+      DYNAMIC_SOFT_SKILLS = res.data.data.softSkills || [];
+      DYNAMIC_INDUSTRY_TERMS = res.data.data.industryTerms || [];
+    }
+  }).catch(() => {});
+}
 
 function computeRealKeywordCoverage(
   matchedSkills: string[],
@@ -57,27 +52,44 @@ function computeRealKeywordCoverage(
   text: string
 ): KeywordCategory[] {
   const lower = (text || "").toLowerCase();
+  const softList = DYNAMIC_SOFT_SKILLS.length > 0 ? DYNAMIC_SOFT_SKILLS : [
+    "leadership", "communication", "teamwork", "problem solving", "collaboration",
+    "adaptability", "critical thinking", "ownership", "agile", "scrum", "mentoring",
+    "time management", "decision making", "presentation", "analytical", "creativity"
+  ];
+  const verbList = DYNAMIC_ACTION_VERBS.length > 0 ? DYNAMIC_ACTION_VERBS : [
+    "built", "developed", "designed", "implemented", "optimized", "engineered",
+    "deployed", "created", "led", "managed", "enhanced", "resolved", "architected",
+    "integrated", "automated", "tested", "delivered", "collaborated", "spearheaded",
+    "scaled", "maintained", "refactored", "analyzed", "orchestrated", "executed"
+  ];
+  const termList = DYNAMIC_INDUSTRY_TERMS.length > 0 ? DYNAMIC_INDUSTRY_TERMS : [
+    "api", "rest", "restful", "ci/cd", "git", "github", "database", "sql", "nosql",
+    "cloud", "docker", "microservices", "testing", "unit testing", "responsive",
+    "performance", "security", "scalability", "full stack", "frontend", "backend",
+    "mvc", "component", "state management", "production", "cross-platform"
+  ];
 
   // 1. Technical Skills
   const techMatched = matchedSkills.length;
   const techTotal = Math.max(techMatched + missingSkills.length, 10);
 
   // 2. Soft Skills
-  const matchedSoft = SOFT_SKILLS.filter((s) => {
+  const matchedSoft = softList.filter((s) => {
     const regex = new RegExp(`\\b${s.replace(/\s+/g, "\\s+")}\\b`, "i");
     return regex.test(lower);
   });
   const softTotal = Math.max(matchedSoft.length, 6);
 
   // 3. Action Verbs
-  const matchedVerbs = ACTION_VERBS.filter((v) => {
+  const matchedVerbs = verbList.filter((v) => {
     const regex = new RegExp(`\\b${v}\\b`, "i");
     return regex.test(lower);
   });
   const verbsTotal = Math.max(matchedVerbs.length, 16);
 
   // 4. Industry Terms
-  const matchedTerms = INDUSTRY_TERMS.filter((t) => {
+  const matchedTerms = termList.filter((t) => {
     const regex = new RegExp(`\\b${t.replace(/\s+/g, "\\s+")}\\b`, "i");
     return regex.test(lower);
   });
@@ -156,7 +168,8 @@ function computeRealChecks(text: string, sections?: any[]): CheckItem[] {
     );
 
   // 9. Action verbs usage
-  const hasActionVerbs = ACTION_VERBS.some((v) => new RegExp(`\\b${v}\\b`, "i").test(lower));
+  const actionList = DYNAMIC_ACTION_VERBS.length > 0 ? DYNAMIC_ACTION_VERBS : ["built", "developed", "engineered"];
+  const hasActionVerbs = actionList.some((v) => new RegExp(`\\b${v}\\b`, "i").test(lower));
 
   // 10. Resume length & content density
   const hasHealthyLength = clean.trim().length >= 250;

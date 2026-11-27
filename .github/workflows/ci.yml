@@ -1,0 +1,51 @@
+
+name: JobPrep AI CI Pipeline
+
+on:
+  push:
+    branches:
+      - feature/ci-cd-pipeline
+      - development
+      - main
+
+  pull_request:
+    branches:
+      - development
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Install, Validate and Build
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Get repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      # Step 3: Install root workspace dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Step 4: Check code quality
+      - name: Run ESLint
+        run: npm run lint
+
+      # Step 5: TypeScript validation
+      - name: Run TypeScript checks
+        run: npm run typecheck
+
+      # Step 6: Build all workspace applications
+      - name: Build applications
+        run: npm run build

@@ -11,7 +11,7 @@ The backend loads environment values with dotenv and validates them at startup. 
 | `JWT_EXPIRES_IN`        | `7d`                                   | JWT lifetime                                                             |
 | `CORS_ORIGIN`           | `http://localhost:3000`                | Allowed frontend origin                                                  |
 | `GROQ_API_KEY`          | Required                               | Groq API key used by ATS resume analysis                                 |
-| `GROQ_MODEL`            | `llama-3.3-70b-versatile`              | Groq model used for ATS resume analysis                                  |
+| `GROQ_MODEL`          openai/gpt-oss-120batile`              | Groq model used for ATS resume analysis                                  |
 | `GEMINI_API_KEY`        | Empty                                  | Gemini API key for AI features                                           |
 | `CLOUDINARY_CLOUD_NAME` | Empty                                  | Cloudinary account name                                                  |
 | `CLOUDINARY_API_KEY`    | Empty                                  | Cloudinary API key                                                       |

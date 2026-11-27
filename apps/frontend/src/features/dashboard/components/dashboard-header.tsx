@@ -19,22 +19,30 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
 
   return (
     <header className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-      <div className="min-w-0">
-        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-[26px]">
-          {greeting}
-          {firstName && (
-            <>
-              ,{" "}
-              <span className="bg-linear-to-r from-violet-400 to-cyan-300 bg-clip-text text-transparent">
-                {firstName}
-              </span>
-            </>
-          )}
-          <span aria-hidden="true" className="ml-2">
-            👋
-          </span>
-        </h1>
-        
+      <div className="flex items-center gap-3 min-w-0">
+        {user?.avatarUrl && (
+          <img
+            src={user.avatarUrl}
+            alt={user.fullName || "User Profile Photo"}
+            className="size-11 shrink-0 rounded-full object-cover border-2 border-violet-500/40 shadow-md shadow-violet-500/20"
+          />
+        )}
+        <div className="min-w-0">
+          <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-[26px]">
+            {greeting}
+            {firstName && (
+              <>
+                ,{" "}
+                <span className="bg-linear-to-r from-violet-400 to-cyan-300 bg-clip-text text-transparent">
+                  {firstName}
+                </span>
+              </>
+            )}
+            <span aria-hidden="true" className="ml-2">
+              👋
+            </span>
+          </h1>
+        </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button

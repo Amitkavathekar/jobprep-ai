@@ -21,6 +21,11 @@ import Link from "next/link"
 import { useEffect, useState, useMemo } from "react"
 import api from "@/lib/axios"
 import { Button } from "@/components/ui/button"
+import {
+  SearchInput,
+  LoadingSpinner,
+  EmptyState,
+} from "@/components/common"
 
 export interface WorkExperienceItem {
   company: string
@@ -327,37 +332,25 @@ export function ResumeTable() {
 
           <div className="flex items-center gap-2">
             {/* Search input */}
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
+            <div className="w-44 sm:w-56">
+              <SearchInput
                 placeholder="Search resumes..."
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value)
+                onChange={(val) => {
+                  setSearchQuery(val)
                   setCurrentPage(1)
                 }}
-                className="h-8 w-44 rounded-lg border border-white/10 bg-white/[0.04] pl-8 pr-2.5 text-xs text-white placeholder-slate-400 outline-none transition focus:border-violet-400 focus:bg-[#0c0b20] sm:w-56"
               />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                >
-                  <X className="size-3" />
-                </button>
-              )}
             </div>
           </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-x-auto">
           {loading ? (
-            <div className="flex h-56 flex-col items-center justify-center gap-3">
-              <Loader2 className="size-6 animate-spin text-violet-400" />
-              <p className="text-xs text-slate-400">Loading your saved resumes...</p>
-            </div>
+            <LoadingSpinner
+              text="Loading your saved resumes..."
+              minHeight={224}
+            />
           ) : (
             <table className="w-full min-w-[620px] border-collapse text-left">
               <thead>
@@ -501,20 +494,16 @@ export function ResumeTable() {
 
                 {visibleResumes.length === 0 && (
                   <tr>
-                    <td className="py-12 text-center" colSpan={5}>
-                      <div className="mx-auto flex max-w-sm flex-col items-center">
-                        <span className="mb-3 flex size-12 items-center justify-center rounded-2xl border border-violet-400/20 bg-violet-400/10 text-violet-300 shadow-lg shadow-violet-500/10">
-                          <FileText aria-hidden="true" className="size-6" />
-                        </span>
-                        <p className="text-base font-semibold text-white">
-                          {searchQuery ? "No matching resumes found" : "No resumes saved yet"}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-400 leading-relaxed">
-                          {searchQuery
+                    <td className="py-8 text-center" colSpan={5}>
+                      <EmptyState
+                        icon={<FileText aria-hidden="true" className="size-6 text-violet-300" />}
+                        title={searchQuery ? "No matching resumes found" : "No resumes saved yet"}
+                        description={
+                          searchQuery
                             ? `Try clearing your search term "${searchQuery}"`
-                            : "Your analyzed and saved resumes will appear here automatically."}
-                        </p>
-                      </div>
+                            : "Your analyzed and saved resumes will appear here automatically."
+                        }
+                      />
                     </td>
                   </tr>
                 )}
