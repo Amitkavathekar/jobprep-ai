@@ -9,7 +9,7 @@ export interface CompleteProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   profile: UserProfile;
-  onSaveProfile: (updatedProfile: UserProfile) => void;
+  onSaveProfile: (updatedProfile: UserProfile) => Promise<void> | void;
 }
 
 export function CompleteProfileModal({
@@ -103,7 +103,7 @@ export function CompleteProfileModal({
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
 
@@ -125,15 +125,22 @@ export function CompleteProfileModal({
       updated_at: new Date().toISOString(),
     };
 
-    setTimeout(() => {
+    if (passwordValue && !passwordValue.includes("••")) {
+      (finalData as any).password = passwordValue;
+    }
+
+    try {
+      await Promise.resolve(onSaveProfile(finalData));
       setIsSaving(false);
       setShowSuccess(true);
-      onSaveProfile(finalData);
       setTimeout(() => {
         setShowSuccess(false);
         onClose();
       }, 900);
-    }, 500);
+    } catch (err) {
+      setIsSaving(false);
+      console.error("Failed to save profile:", err);
+    }
   };
 
   const getInitials = (name?: string) => {

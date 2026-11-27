@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import CompleteProfileModal from "@/features/profile/components/CompleteProfileModal";
 import type { UserProfile, Education } from "@/app/(protected)/user/profile/types";
+import { fetchCurrentUserApi, updateUserProfileApi } from "@/services/userService";
 
 function parseStoredUser(): UserProfile {
   try {
@@ -53,7 +54,7 @@ export default function CompleteProfileModalProvider() {
   const [isOpen, setIsOpen] = useState(false);
   const [profile, setProfile] = useState<UserProfile>(() => parseStoredUser());
 
-  const checkShouldOpen = useCallback(() => {
+  const checkShouldOpen = useCallback(async () => {
     try {
       const shouldShowFlag = localStorage.getItem("show_complete_profile_modal");
       const current = parseStoredUser();
@@ -75,6 +76,10 @@ export default function CompleteProfileModalProvider() {
           if (userKey) {
             localStorage.setItem(`profile_modal_shown_${userKey}`, "true");
           }
+          try {
+            await fetchCurrentUserApi();
+          } catch {}
+          setProfile(parseStoredUser());
           setIsOpen(true);
         }
       }
@@ -84,7 +89,10 @@ export default function CompleteProfileModalProvider() {
   useEffect(() => {
     checkShouldOpen();
 
-    const handleOpen = () => {
+    const handleOpen = async () => {
+      try {
+        await fetchCurrentUserApi();
+      } catch {}
       setProfile(parseStoredUser());
       setIsOpen(true);
     };
@@ -116,7 +124,7 @@ export default function CompleteProfileModalProvider() {
     setIsOpen(false);
   };
 
-  const handleSaveProfile = (updated: UserProfile) => {
+  const handleSaveProfile = async (updated: UserProfile) => {
     try {
       const raw = localStorage.getItem("user");
       const prev = raw ? JSON.parse(raw) : {};
@@ -126,25 +134,31 @@ export default function CompleteProfileModalProvider() {
         localStorage.setItem(`profile_modal_shown_${userKey}`, "true");
       }
 
-      const merged = {
-        ...prev,
-        ...updated,
-        fullName: updated.full_name || prev.fullName || prev.full_name,
-        avatarUrl: updated.avatar_url || prev.avatarUrl || prev.avatar_url,
-        professionalTitle: updated.professional_title || prev.professionalTitle || prev.professional_title,
-        phoneNo: updated.phone_no || prev.phoneNo || prev.phone_no,
-        portfolioUrl: updated.portfolio_url || prev.portfolioUrl || prev.portfolio_url,
-        profile_completed: true,
-      };
+      // Save into MongoDB via backend API
+      const result = await updateUserProfileApi(updated);
 
-      localStorage.setItem("user", JSON.stringify(merged));
       localStorage.removeItem("show_complete_profile_modal");
-      setProfile(updated);
-
-      window.dispatchEvent(new Event("user-profile-updated"));
-      window.dispatchEvent(new Event("storage"));
+      setProfile(result ? parseStoredUser() : updated);
     } catch (e) {
-      console.error("Failed to save profile:", e);
+      console.error("Failed to save profile into database:", e);
+      // Fallback: update local storage if offline
+      try {
+        const raw = localStorage.getItem("user");
+        const prev = raw ? JSON.parse(raw) : {};
+        const merged = {
+          ...prev,
+          ...updated,
+          fullName: updated.full_name || prev.fullName || prev.full_name,
+          avatarUrl: updated.avatar_url || prev.avatarUrl || prev.avatar_url,
+          professionalTitle: updated.professional_title || prev.professionalTitle || prev.professional_title,
+          phoneNo: updated.phone_no || prev.phoneNo || prev.phone_no,
+          portfolioUrl: updated.portfolio_url || prev.portfolioUrl || prev.portfolio_url,
+          profile_completed: true,
+        };
+        localStorage.setItem("user", JSON.stringify(merged));
+        window.dispatchEvent(new Event("user-profile-updated"));
+        window.dispatchEvent(new Event("storage"));
+      } catch {}
     }
   };
 

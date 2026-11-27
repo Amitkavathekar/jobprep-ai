@@ -577,6 +577,28 @@ export default function MockInterview({
     (o) => o.id === selectedType
   );
 
+  const getClientStoredJd = (uid?: string): string => {
+    if (typeof window === "undefined") return "";
+    let jd =
+      (uid ? localStorage.getItem(`jobprep_jd_${uid}`) : null) ||
+      localStorage.getItem("jobprep_jd") ||
+      "";
+    if (!jd || jd.trim().length < 10) {
+      try {
+        const rawAnalysis =
+          (uid ? localStorage.getItem(`jobprep_latest_analysis_${uid}`) : null) ||
+          localStorage.getItem("jobprep_latest_analysis");
+        if (rawAnalysis) {
+          const parsed = JSON.parse(rawAnalysis);
+          if (parsed?.jobDescription && typeof parsed.jobDescription === "string") {
+            jd = parsed.jobDescription.trim();
+          }
+        }
+      } catch {}
+    }
+    return jd;
+  };
+
   // Helper to fetch dynamic questions generated strictly from user's latest updated JD & Resume
   const fetchJdQuestions = async (
     type: InterviewType = selectedType,
@@ -591,8 +613,7 @@ export default function MockInterview({
 
     const uid = currentUser?.id && currentUser.id !== "usr_guest" ? currentUser.id : "";
     const localJd =
-      (uid ? localStorage.getItem(`jobprep_jd_${uid}`) : null) ||
-      localStorage.getItem("jobprep_jd") ||
+      getClientStoredJd(uid) ||
       targetRoleInfo.jobDescription ||
       "";
 
@@ -624,8 +645,7 @@ export default function MockInterview({
     }
   };
 
-  // Fetch candidate target role and latest JD from backend
-  useEffect(() => {
+  const syncTargetRole = async (targetType = selectedType, count = targetQuestionCount, diff = difficulty) => {
     let uid = "";
     try {
       const raw = localStorage.getItem("user");
@@ -641,32 +661,46 @@ export default function MockInterview({
     } catch {}
 
     setIsLoadingTargetRole(true);
-    const localJd =
-      (uid ? localStorage.getItem(`jobprep_jd_${uid}`) : null) ||
-      localStorage.getItem("jobprep_jd") ||
-      "";
+    const localJd = getClientStoredJd(uid);
 
     const url = localJd
       ? `/mock-interview/target-role?localJd=${encodeURIComponent(localJd.slice(0, 1000))}`
       : "/mock-interview/target-role";
 
-    api
-      .get(url)
-      .then((res) => {
-        if (res.data?.success && res.data.data) {
-          const info = res.data.data;
-          setTargetRoleInfo(info);
-          if (info.hasJd) {
-            fetchJdQuestions(selectedType, targetQuestionCount, difficulty);
-          } else {
-            setSessionQuestions([]);
-          }
+    try {
+      const res = await api.get(url);
+      if (res.data?.success && res.data.data) {
+        const info = res.data.data;
+        setTargetRoleInfo(info);
+        if (info.hasJd) {
+          fetchJdQuestions(targetType, count, diff);
+        } else {
+          setSessionQuestions([]);
         }
-      })
-      .catch(() => {})
-      .finally(() => {
-        setIsLoadingTargetRole(false);
-      });
+      }
+    } catch {
+    } finally {
+      setIsLoadingTargetRole(false);
+    }
+  };
+
+  // Fetch candidate target role and latest JD from backend and sync automatically on upload
+  useEffect(() => {
+    syncTargetRole();
+
+    const handleSyncEvent = () => {
+      syncTargetRole();
+    };
+
+    window.addEventListener("storage", handleSyncEvent);
+    window.addEventListener("jobprep_unlocked", handleSyncEvent);
+    window.addEventListener("focus", handleSyncEvent);
+
+    return () => {
+      window.removeEventListener("storage", handleSyncEvent);
+      window.removeEventListener("jobprep_unlocked", handleSyncEvent);
+      window.removeEventListener("focus", handleSyncEvent);
+    };
   }, []);
 
   const handleSelectType = (typeId: InterviewType) => {
@@ -1397,13 +1431,13 @@ export default function MockInterview({
                                   }}
                                   onClick={() => {
                                     if (onNavigate) {
-                                      onNavigate("ats" as Screen);
+                                      onNavigate("job-resume" as Screen);
                                     } else {
-                                      window.location.href = "/ats";
+                                      router.push("/user/resume");
                                     }
                                   }}
                                 >
-                                  📄 Upload JD in ATS Analyzer →
+                                  📄 Upload JD in Job & Resume →
                                 </button>
                               </div>
                             </div>

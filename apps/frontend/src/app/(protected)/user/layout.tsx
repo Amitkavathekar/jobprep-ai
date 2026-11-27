@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/sidebar"
 import MembershipModalProvider from "@/components/MembershipModalProvider"
 import CompleteProfileModalProvider from "@/components/CompleteProfileModalProvider"
+import FloatingSupportWidget from "@/components/FloatingSupportWidget"
 
 export default function UserLayout({
   children,
@@ -31,6 +32,7 @@ export default function UserLayout({
       </SidebarInset>
       <MembershipModalProvider />
       <CompleteProfileModalProvider />
+      <FloatingSupportWidget />
     </SidebarProvider>
   )
 }

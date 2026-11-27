@@ -3,12 +3,27 @@
 import React, { useState, useEffect } from "react";
 import UserMembershipModal from "./UserMembershipModal";
 import { defaultPlans, PlanData } from "./admin/PlanModal";
+import api from "@/lib/axios";
 
 export default function MembershipModalProvider() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
+  const [plans, setPlans] = useState<PlanData[]>(defaultPlans);
 
   useEffect(() => {
+    // Fetch real plans from backend MongoDB API
+    async function fetchPlans() {
+      try {
+        const res = await api.get("/subscriptions/plans");
+        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+          setPlans(res.data.data);
+        }
+      } catch (err) {
+        console.warn("Could not fetch plans from backend, using default plans schema", err);
+      }
+    }
+    fetchPlans();
+
     try {
       const raw = localStorage.getItem("user");
       if (raw) {
@@ -65,7 +80,7 @@ export default function MembershipModalProvider() {
     <UserMembershipModal
       isOpen={isOpen}
       onClose={() => setIsOpen(false)}
-      plans={defaultPlans}
+      plans={plans}
       currentPlanId={currentPlanId}
       onSubscribe={handleSubscribe}
     />

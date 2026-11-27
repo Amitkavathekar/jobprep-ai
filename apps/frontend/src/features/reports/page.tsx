@@ -14,6 +14,11 @@ import {
   X,
 } from "lucide-react";
 import api from "@/lib/axios";
+import {
+  StatCard,
+  SearchInput,
+  EmptyState,
+} from "@/components/common";
 
 interface AnalysisItem {
   id: string | number;
@@ -388,18 +393,13 @@ export default function ReportsPage() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {summaryStats.map((stat) => (
-          <section
+          <StatCard
             key={stat.label}
-            className="flex flex-col items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.035] px-5 py-5 text-center transition hover:border-violet-400/20 hover:bg-white/[0.05]"
-          >
-            <div className="mb-1.5 text-[11px] uppercase tracking-wider text-slate-400/60">
-              {stat.label}
-            </div>
-            <div className="mb-1 text-[32px] font-extrabold tracking-tight" style={{ color: stat.color }}>
-              {stat.value}
-            </div>
-            <div className="text-xs text-slate-400/70">{stat.subtitle}</div>
-          </section>
+            title={stat.label}
+            value={stat.value}
+            subtitle={stat.subtitle}
+            color={stat.color}
+          />
         ))}
       </div>
 
@@ -432,29 +432,16 @@ export default function ReportsPage() {
       {/* Top Filter Bar - All Controls Aligned to the Right Side (Search placeholder to the left of Date) */}
       <div className="mb-4 flex flex-wrap items-center justify-end gap-2.5 sm:gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3.5 shadow-sm">
         {/* Search input with placeholder (left side of date) */}
-        <div className="relative min-w-[200px] sm:w-64">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
+        <div className="min-w-[200px] sm:w-64">
+          <SearchInput
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={setSearchQuery}
             placeholder={
               activeTab === "analysis"
                 ? "Filter ATS records by role..."
                 : "Filter interviews by role..."
             }
-            className="w-full rounded-xl border border-white/10 bg-[#0d0c24] py-2 pl-9 pr-8 text-xs text-slate-100 placeholder:text-slate-500 focus:border-violet-400/50 focus:outline-none focus:ring-1 focus:ring-violet-400/40"
           />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-              aria-label="Clear search"
-            >
-              <X size={14} />
-            </button>
-          )}
         </div>
 
         {/* Date Filter (according to date) */}

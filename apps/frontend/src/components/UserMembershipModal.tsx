@@ -1,26 +1,26 @@
 "use client";
 
 import React, { useState } from "react";
-import { PlanData, defaultPlans } from "./admin/PlanModal";
+import { PlanData } from "./admin/PlanModal";
 import { Coupon } from "../types";
 import {
-  getStoredCoupons,
+  validateCouponApi,
   isCouponApplicableToPlan,
   calculateCouponPrice,
 } from "../services/couponService";
 
-export interface UserMembershipModalProps {
+interface UserMembershipModalProps {
   isOpen: boolean;
   onClose: () => void;
-  plans?: PlanData[];
+  plans: PlanData[];
   currentPlanId?: string | null;
-  onSubscribe?: (plan: PlanData) => void;
+  onSubscribe: (plan: PlanData) => void;
 }
 
 export default function UserMembershipModal({
   isOpen,
   onClose,
-  plans = defaultPlans,
+  plans,
   currentPlanId = null,
   onSubscribe,
 }: UserMembershipModalProps) {
@@ -30,54 +30,37 @@ export default function UserMembershipModal({
 
   if (!isOpen) return null;
 
-  const effectivePlans = plans && plans.length > 0 ? plans : defaultPlans;
-
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanCode = couponCode.trim().toUpperCase();
     if (!cleanCode) return;
 
-    const couponsList = getStoredCoupons();
-    const found = couponsList.find((c) => c.code.trim().toUpperCase() === cleanCode);
+    try {
+      const result = await validateCouponApi(cleanCode);
 
-    if (!found) {
-      setAppliedCoupon(null);
-      setCouponMsg({ type: "error", text: `Invalid coupon code "${cleanCode}".` });
-      return;
-    }
-
-    if (found.status === "Expired") {
-      setAppliedCoupon(null);
-      setCouponMsg({ type: "error", text: `Coupon "${found.code}" has expired.` });
-      return;
-    }
-
-    setAppliedCoupon(found);
-    const plansLabel = found.applicablePlans.join(", ");
-    setCouponMsg({
-      type: "success",
-      text: `Coupon "${found.code}" applied! (${found.discountType === "Percentage" ? found.discountValue + "% OFF" : "₹" + found.discountValue + " OFF"}). Valid for: ${plansLabel}.`,
-    });
-  };
-
-  const handlePlanSubscribe = (plan: PlanData) => {
-    if (onSubscribe) {
-      onSubscribe(plan);
-    } else {
-      try {
-        const raw = localStorage.getItem("user");
-        const u = raw ? JSON.parse(raw) : {};
-        u.hasActiveSubscription = true;
-        u.isSubscribed = true;
-        u.plan = plan.name;
-        u.planId = plan.id;
-        localStorage.setItem("user", JSON.stringify(u));
-      } catch {}
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("subscription-updated", { detail: { plan } }));
+      if (!result.valid || !result.coupon) {
+        setAppliedCoupon(null);
+        setCouponMsg({ type: "error", text: result.message || `Invalid coupon code "${cleanCode}".` });
+        return;
       }
+
+      const found = result.coupon;
+      if (found.status === "Expired") {
+        setAppliedCoupon(null);
+        setCouponMsg({ type: "error", text: `Coupon "${found.code}" has expired.` });
+        return;
+      }
+
+      setAppliedCoupon(found);
+      const plansLabel = found.applicablePlans?.join(", ") || "All Plans";
+      setCouponMsg({
+        type: "success",
+        text: `Coupon "${found.code}" applied! (${found.discountType === "Percentage" ? found.discountValue + "% OFF" : "₹" + found.discountValue + " OFF"}). Valid for: ${plansLabel}.`,
+      });
+    } catch {
+      setAppliedCoupon(null);
+      setCouponMsg({ type: "error", text: `Error validating coupon "${cleanCode}".` });
     }
-    onClose();
   };
 
   return (
@@ -215,7 +198,7 @@ export default function UserMembershipModal({
 
         {/* Plans Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20, marginBottom: 24 }}>
-          {effectivePlans.map((plan) => {
+          {plans.map((plan) => {
             const isCurrent = currentPlanId === plan.id;
             const isPopular = plan.popular || plan.badge?.toLowerCase().includes("popular");
             const isEligible = appliedCoupon ? isCouponApplicableToPlan(appliedCoupon, plan.name) : false;
@@ -286,7 +269,7 @@ export default function UserMembershipModal({
                       </span>
                       {(isEligible || (plan.originalPriceINR && plan.originalPriceINR > plan.priceINR)) && (
                         <span style={{ fontSize: 14, color: "rgba(148,163,184,0.5)", textDecoration: "line-through" }}>
-                          ₹{(isEligible ? plan.priceINR : (plan.originalPriceINR ?? plan.priceINR)).toLocaleString()}
+                          ₹{(isEligible ? plan.priceINR : plan.originalPriceINR || plan.priceINR).toLocaleString()}
                         </span>
                       )}
                       {appliedCoupon && isEligible && (
@@ -349,7 +332,10 @@ export default function UserMembershipModal({
                     borderColor: isCurrent ? "#10b981" : undefined,
                     color: isCurrent ? "#10b981" : undefined,
                   }}
-                  onClick={() => handlePlanSubscribe(plan)}
+                  onClick={() => {
+                    onSubscribe(plan);
+                    onClose();
+                  }}
                 >
                   {isCurrent ? "✓ Currently Active" : "Subscribe & Unlock All →"}
                 </button>

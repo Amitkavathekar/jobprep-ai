@@ -21,7 +21,7 @@ export const authenticate = (
   try {
     const user = verifyToken(token);
 
-    req.user = user;
+    (req as any).user = user;
 
     return next();
   } catch {

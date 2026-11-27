@@ -5,95 +5,48 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PricingCard, type PricingPlan } from "@/components/landing/PricingCard";
-
-const pricingPlans: PricingPlan[] = [
-  {
-    name: "Basic",
-    badge: "1 Month",
-    priceINR: 499,
-    period: "/ month",
-    moEquivalent: "₹499/mo",
-    mockLimit: "10 AI Interviews",
-    atsLimit: "25 Resume Scans",
-    popular: false,
-    color: "text-slate-400",
-    bgBorder: "border-white/10",
-    features: [
-      "10 AI Mock Interviews",
-      "25 ATS Resume Scans",
-      "Standard AI Feedback",
-      "Email Support",
-    ],
-    cta: "Get Basic Plan",
-  },
-  {
-    name: "Plus",
-    badge: "3 Months",
-    priceINR: 1299,
-    period: "/ 3 months",
-    moEquivalent: "₹433/mo",
-    mockLimit: "35 AI Interviews",
-    atsLimit: "75 Resume Scans",
-    popular: false,
-    color: "text-cyan-500",
-    bgBorder: "border-white/10",
-    features: [
-      "35 AI Mock Interviews",
-      "75 ATS Resume Scans",
-      "Detailed Audio Feedback",
-      "Priority Chat Support",
-    ],
-    cta: "Get Plus Plan",
-  },
-  {
-    name: "Pro",
-    badge: "6 Months",
-    tag: "🔥 MOST POPULAR",
-    priceINR: 2299,
-    period: "/ 6 months",
-    moEquivalent: "₹383/mo",
-    mockLimit: "Unlimited",
-    atsLimit: "Unlimited",
-    popular: true,
-    color: "text-violet-500",
-    bgBorder:
-      "border-violet-600 bg-gradient-to-b from-violet-600/20 to-slate-900 shadow-[0_20px_40px_rgba(124,58,237,0.3)]",
-    features: [
-      "Unlimited Mock Interviews",
-      "Unlimited ATS Scans",
-      "Live Speech Analysis",
-      "1-on-1 AI Resume Opt",
-    ],
-    cta: "Upgrade to Pro",
-  },
-  {
-    name: "Elite VIP",
-    badge: "1 Year",
-    tag: "👑 BEST VALUE",
-    priceINR: 3999,
-    period: "/ 1 year",
-    moEquivalent: "₹333/mo",
-    mockLimit: "Unlimited + VIP",
-    atsLimit: "Unlimited + VIP",
-    popular: false,
-    isElite: true,
-    color: "text-amber-500",
-    bgBorder:
-      "border-amber-500/50 bg-gradient-to-b from-amber-500/10 to-slate-900",
-    features: [
-      "All Pro Features",
-      "VIP Priority Queue",
-      "Job Application Tracker",
-      "Placement Consultation",
-    ],
-    cta: "Get Elite VIP",
-  },
-];
+import api from "@/lib/axios";
 
 export default function LandingPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [plans, setPlans] = useState<PricingPlan[]>([]);
+
+  useEffect(() => {
+    // Fetch live plans from MongoDB
+    api.get("/admin/plans")
+      .then((res) => {
+        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+          const mapped: PricingPlan[] = res.data.data.map((p: any) => ({
+            name: p.name,
+            badge: p.duration,
+            tag: p.badge,
+            priceINR: p.priceINR,
+            period: `/${p.duration?.toLowerCase() || "month"}`,
+            moEquivalent: `₹${Math.round(p.priceINR / (p.months || 1))}/mo`,
+            mockLimit: p.mockLimit || "10 AI Interviews",
+            atsLimit: p.atsLimit || "25 Resume Scans",
+            popular: Boolean(p.popular),
+            isElite: p.name?.toLowerCase().includes("elite"),
+            color: p.popular
+              ? "text-violet-500"
+              : p.name?.toLowerCase().includes("elite")
+              ? "text-amber-500"
+              : "text-cyan-500",
+            bgBorder: p.popular
+              ? "border-violet-600 bg-gradient-to-b from-violet-600/20 to-slate-900 shadow-[0_20px_40px_rgba(124,58,237,0.3)]"
+              : p.name?.toLowerCase().includes("elite")
+              ? "border-amber-500/50 bg-gradient-to-b from-amber-500/10 to-slate-900"
+              : "border-white/10",
+            features: p.features || [],
+            cta: `Get ${p.name} Plan`,
+          }));
+          setPlans(mapped);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -578,7 +531,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-4">
-            {pricingPlans.map((plan, idx) => (
+            {plans.map((plan, idx) => (
               <PricingCard key={idx} plan={plan} />
             ))}
           </div>

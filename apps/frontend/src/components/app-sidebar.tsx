@@ -15,6 +15,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo, useSyncExternalStore } from "react"
 import api from "@/lib/axios"
+import { fetchCurrentUserApi } from "@/services/userService"
 
 import {
   Sidebar,
@@ -35,11 +36,16 @@ type SidebarUser = {
   id?: string
   fullName?: string
   email?: string
+  avatarUrl?: string
 }
 
 function subscribeToUserChanges(onChange: () => void) {
   window.addEventListener("storage", onChange)
-  return () => window.removeEventListener("storage", onChange)
+  window.addEventListener("user-profile-updated", onChange)
+  return () => {
+    window.removeEventListener("storage", onChange)
+    window.removeEventListener("user-profile-updated", onChange)
+  }
 }
 
 function getStoredUser() {
@@ -99,8 +105,18 @@ function parseSidebarUser(value: string | null): SidebarUser | null {
     return {
       id: typeof user.id === "string" ? user.id : typeof user._id === "string" ? user._id : undefined,
       fullName:
-        typeof user.fullName === "string" ? user.fullName.trim() : undefined,
+        typeof user.fullName === "string"
+          ? user.fullName.trim()
+          : typeof user.full_name === "string"
+          ? (user.full_name as string).trim()
+          : undefined,
       email: typeof user.email === "string" ? user.email.trim() : undefined,
+      avatarUrl:
+        typeof user.avatarUrl === "string"
+          ? user.avatarUrl
+          : typeof user.avatar_url === "string"
+          ? (user.avatar_url as string)
+          : undefined,
     }
   } catch (error) {
     console.error("Unable to parse the signed-in user for the sidebar.", error)
@@ -201,6 +217,11 @@ export function AppSidebar() {
   const user = useMemo(() => parseSidebarUser(storedUser), [storedUser])
 
   useEffect(() => {
+    // Fetch live user information directly from MongoDB database
+    fetchCurrentUserApi().catch(() => {})
+  }, [])
+
+  useEffect(() => {
     if (!user?.id) return
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
     if (!token) return
@@ -254,9 +275,17 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="gap-4 border-b border-sidebar-border p-4">
         <div className="flex items-center gap-2">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-cyan-400 text-xs font-bold text-white">
-            {initials}
-          </span>
+          {user?.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt={user.fullName || "User Avatar"}
+              className="size-8 shrink-0 rounded-full object-cover border border-violet-500/40 shadow-sm shadow-violet-500/30"
+            />
+          ) : (
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-cyan-400 text-xs font-bold text-white">
+              {initials}
+            </span>
+          )}
           <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
             <p className="truncate text-sm font-semibold text-white">
               {user?.fullName || "Your account"}

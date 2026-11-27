@@ -1,5 +1,5 @@
 export const HTTP_STATUS = {
-  // 2xx - Success
+  // 200 - Success
   OK: 200,
   CREATED: 201,
   ACCEPTED: 202,
@@ -8,14 +8,14 @@ export const HTTP_STATUS = {
   RESET_CONTENT: 205,
   PARTIAL_CONTENT: 206,
 
-  // 3xx - Redirection
+  // 300 - Redirection
   MOVED_PERMANENTLY: 301,
   FOUND: 302,
   NOT_MODIFIED: 304,
   TEMPORARY_REDIRECT: 307,
   PERMANENT_REDIRECT: 308,
 
-  // 4xx - Client Errors
+  // 400 - Client Errors
   BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
   PAYMENT_REQUIRED: 402,

@@ -46,14 +46,9 @@ export function DashboardMetrics() {
         })
         .catch(() => {})
 
-      // 3. Fetch user mock interview count from backend & local storage
+      // 3. Fetch user mock interview count directly from MongoDB database
       const fetchInterviewsCount = async () => {
         try {
-          const storedCount = localStorage.getItem(`jobprep_interview_count_${userId}`)
-          if (storedCount !== null && !isNaN(parseInt(storedCount, 10))) {
-            setInterviewsCount(parseInt(storedCount, 10))
-          }
-
           // A. Check dedicated mock interview endpoint
           try {
             const mockRes = await api.get(`/mock-interview?userId=${userId}`)
@@ -65,7 +60,6 @@ export function DashboardMetrics() {
                   ? mockRes.data.data.length
                   : 0
               setInterviewsCount(count)
-              localStorage.setItem(`jobprep_interview_count_${userId}`, String(count))
               return
             }
           } catch {}
@@ -76,7 +70,6 @@ export function DashboardMetrics() {
             if (statsRes.data?.success && typeof statsRes.data.data?.totalInterviews === "number") {
               const count = statsRes.data.data.totalInterviews
               setInterviewsCount(count)
-              localStorage.setItem(`jobprep_interview_count_${userId}`, String(count))
               return
             }
           } catch {}
@@ -92,7 +85,6 @@ export function DashboardMetrics() {
                   ? repRes.data.data.items.length
                   : 0
               setInterviewsCount(count)
-              localStorage.setItem(`jobprep_interview_count_${userId}`, String(count))
             }
           } catch {}
         } catch (e) {

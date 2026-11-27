@@ -12,6 +12,7 @@ import {
 import { useMemo, useState, useSyncExternalStore } from "react"
 
 import type { Education, UserProfile } from "@/app/(protected)/user/profile/types"
+import { updateUserProfileApi } from "@/services/userService"
 
 type ProfileTab = "general" | "security" | "danger"
 type StoredUser = Record<string, unknown>
@@ -195,7 +196,7 @@ function ProfileSettings({
     updateField("educationList", educationList)
   }
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     try {
       const firstEducation = form.educationList?.[0]
       const updatedProfile: UserProfile = {
@@ -213,15 +214,9 @@ function ProfileSettings({
             : undefined,
         updated_at: new Date().toISOString(),
       }
-      const updatedUser = {
-        ...storedUser,
-        ...updatedProfile,
-        fullName: updatedProfile.full_name || "",
-        professionalTitle: updatedProfile.professional_title || "",
-      }
 
-      window.localStorage.setItem("user", JSON.stringify(updatedUser))
-      window.dispatchEvent(new Event("user-profile-updated"))
+      await updateUserProfileApi(updatedProfile)
+
       setForm(updatedProfile)
       setSaveError("")
       setSaveMessage("Your profile changes have been saved.")
@@ -229,7 +224,7 @@ function ProfileSettings({
       console.error("Unable to save the user's profile.", error)
       setSaveMessage("")
       setSaveError(
-        "We couldn't save your profile in this browser. Check available storage and try again."
+        "We couldn't save your profile. Please check your connection and try again."
       )
     }
   }

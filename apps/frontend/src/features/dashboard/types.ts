@@ -3,5 +3,6 @@ export interface DashboardUser {
   email?: string
   role?: string
   professionalTitle?: string
+  avatarUrl?: string
   createdAt?: string
 }
