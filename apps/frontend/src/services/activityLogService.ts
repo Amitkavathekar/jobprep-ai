@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import { ActivityLogItem } from "../types";
+import { ActivityLogItem } from "@/types";
 
 // In-memory cache without using localStorage
 let inMemoryActivityLogs: ActivityLogItem[] = [];

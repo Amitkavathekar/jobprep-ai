@@ -1,17 +1,7 @@
 import api from "@/lib/axios";
+import type { UserProfile } from "@/types";
 
-export interface UserProfile {
-  id?: string;
-  _id?: string;
-  fullName?: string;
-  name?: string;
-  email: string;
-  role?: string;
-  portfolioUrl?: string;
-  hasActiveSubscription?: boolean;
-  isSubscribed?: boolean;
-  plan?: string;
-}
+export type { UserProfile };
 
 // In-memory cache for fast synchronous access
 let cachedUser: UserProfile | null = null;

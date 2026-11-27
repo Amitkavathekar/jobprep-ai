@@ -1,1 +1,1 @@
-export type { Screen } from "./ai-analysis/types";
+export type { Screen } from "@/types";

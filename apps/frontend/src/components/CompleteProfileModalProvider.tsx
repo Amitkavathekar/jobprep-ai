@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import CompleteProfileModal from "@/features/profile/components/CompleteProfileModal";
-import type { UserProfile, Education } from "@/app/(protected)/user/profile/types";
+import type { UserProfile, Education } from "@/types";
 import { fetchCurrentUserApi, updateUserProfileApi } from "@/services/userService";
 
 function parseStoredUser(): UserProfile {

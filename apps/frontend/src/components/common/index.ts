@@ -24,3 +24,6 @@ export type { PaginationProps } from "./pagination";
 
 export { default as FileDropzone } from "./file-dropzone";
 export type { FileDropzoneProps } from "./file-dropzone";
+
+export { default as AuthCard } from "./auth";
+export { default as ForgotPassword } from "./ForgotPassword";

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AdminScreen } from "../types";
+import { AdminScreen } from "@/types";
 
 interface AdminNavItem {
   id: AdminScreen;

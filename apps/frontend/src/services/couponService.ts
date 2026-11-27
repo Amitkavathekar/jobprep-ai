@@ -1,4 +1,4 @@
-import { Coupon } from "../types";
+import { Coupon } from "@/types";
 import api from "@/lib/axios";
 import { logAdminActivity } from "./activityLogService";
 

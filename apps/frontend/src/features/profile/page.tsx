@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 import { useMemo, useState, useSyncExternalStore } from "react"
 
-import type { Education, UserProfile } from "@/app/(protected)/user/profile/types"
+import type { Education, UserProfile } from "@/types"
 import { updateUserProfileApi } from "@/services/userService"
 
 type ProfileTab = "general" | "security" | "danger"

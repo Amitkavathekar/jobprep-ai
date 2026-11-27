@@ -1,13 +1,6 @@
-export type Screen =
-  | "job-resume"
-  | "ai-analysis"
-  | "resume-editor"
-  | "ats-analysis"
-  | "interview-prep"
-  | "mock-interview"
-  | "reports"
-  | "dashboard"
-  | (string & {});
+import type { Screen } from "@/types";
+
+export type { Screen };
 
 export interface ResumeSection {
   title: string;

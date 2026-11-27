@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useContext } from "react";
-import type { UserProfile, Education } from "@/app/(protected)/user/profile/types";
+import type { UserProfile, Education } from "@/types";
 import { SidebarContext } from "@/components/ui/sidebar";
 import { Eye, EyeOff } from "lucide-react";
 

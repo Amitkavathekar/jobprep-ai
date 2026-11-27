@@ -1,1 +1,1 @@
-export { default } from "../resume/page"
+export { default } from "@/features/resume/page";

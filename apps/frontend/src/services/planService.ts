@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import { PlanData, defaultPlans } from "../components/admin/PlanModal";
+import { PlanData } from "@/components/admin/PlanModal";
 import { logAdminActivity } from "./activityLogService";
 
 // In-memory cache for fast synchronous access fetched dynamically from MongoDB database
